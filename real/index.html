@@ -1,0 +1,1999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CareerPrep AI — Land Your Dream Job</title>
+
+<!-- ── Google Fonts ── -->
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+
+<!-- ── Third-party Libraries ── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+<!-- ── Firebase SDK ── -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<!-- ── App Stylesheet ── -->
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+
+<!-- ╔══════════════════════════════════════╗
+     SCREEN 0: FIREBASE SETUP (first run only)
+╚══════════════════════════════════════╝ -->
+<div class="screen active" id="screen-fbsetup" style="flex-direction:column;background:linear-gradient(135deg,#0d1b2a 0%,#1a2f4a 60%,#1b3a6b 100%);align-items:center;justify-content:center;padding:40px 20px">
+  <div style="background:#fff;border-radius:24px;padding:40px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#4361ee,#0ab5a0);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 14px">🔥</div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:26px;font-weight:900;color:#0d1b2a;margin-bottom:6px">Connect Your Firebase</h2>
+      <p style="font-size:13px;color:#64748b;line-height:1.6">CareerPrep uses Firebase for real authentication and cloud storage. Paste your project config below — it takes 2 minutes to set up.</p>
+    </div>
+
+    <!-- Step guide -->
+    <div style="background:#f8faff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:20px;font-size:12px;color:#334155;line-height:1.8">
+      <div style="font-weight:800;color:#4361ee;margin-bottom:8px">📋 How to get your Firebase config (free):</div>
+      <div>1. Go to <a href="https://console.firebase.google.com" target="_blank" style="color:#4361ee;font-weight:700">console.firebase.google.com</a></div>
+      <div>2. Click <strong>Add project</strong> → name it "CareerPrep" → Create</div>
+      <div>3. Click ⚙️ <strong>Project Settings</strong> → scroll to <strong>Your apps</strong></div>
+      <div>4. Click <strong>&lt;/&gt; Web</strong> → Register app → copy the <strong>firebaseConfig</strong> object</div>
+      <div>5. In Firebase Console → <strong>Authentication</strong> → Get Started → Enable <strong>Email/Password</strong></div>
+      <div>6. In Firebase Console → <strong>Firestore Database</strong> → Create database → Start in <strong>test mode</strong></div>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <label style="font-size:11px;font-weight:800;color:#334155;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px">Paste your firebaseConfig JSON here:</label>
+      <textarea id="fbConfigInput" rows="8" style="width:100%;padding:12px;border:2px solid #e2e8f0;border-radius:10px;font-family:'Courier New',monospace;font-size:12px;color:#0d1b2a;outline:none;resize:vertical;line-height:1.6" placeholder='{
+  "apiKey": "AIza...",
+  "authDomain": "your-project.firebaseapp.com",
+  "projectId": "your-project-id",
+  "storageBucket": "your-project.appspot.com",
+  "messagingSenderId": "123456789",
+  "appId": "1:123456789:web:abc123"
+}'></textarea>
+      <div id="fbConfigErr" style="color:#f43f5e;font-size:12px;font-weight:600;margin-top:6px;display:none"></div>
+    </div>
+
+    <button onclick="initFirebase()" style="width:100%;padding:14px;border-radius:10px;border:none;background:#4361ee;color:#fff;font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 4px 16px rgba(67,97,238,.4)">
+      🚀 Connect Firebase &amp; Start
+    </button>
+
+    <div style="text-align:center;margin-top:16px">
+      <button onclick="useDemoMode()" style="background:none;border:none;color:#64748b;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline">
+        Skip for now — use demo mode (no real login)
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════╗
+     SCREEN 1: LANDING PAGE
+╚══════════════════════════════════════╝ -->
+<div class="screen" id="screen-landing">
+  <nav class="landing-nav">
+    <div class="landing-logo">
+      <div class="logo-mark">CP</div>
+      <div class="logo-name">Career<span>Prep</span> AI</div>
+    </div>
+    <div class="nav-actions">
+      <button class="btn-nav-ghost" onclick="showAuth('login')">Log In</button>
+      <button class="btn-nav-solid" onclick="showAuth('register')">Get Started Free</button>
+    </div>
+  </nav>
+
+  <div class="landing-hero">
+    <div class="hero-eyebrow">
+      <div class="hero-dot"></div>
+      AI-Powered Career Preparation Platform
+    </div>
+
+    <h1 class="hero-h1">
+      Land Your <em>Dream Job</em><br>With AI Coaching
+    </h1>
+
+    <p class="hero-sub">
+      From resume to offer letter — practice aptitude tests, group discussions, and mock interviews with real-time AI feedback. Built for India's top campus placements.
+    </p>
+
+    <div class="hero-cta">
+      <button class="btn-hero-primary" onclick="showAuth('register')">
+        🚀 Start Free Today
+      </button>
+      <button class="btn-hero-ghost" onclick="showAuth('login')">
+        Already have an account? Log in →
+      </button>
+    </div>
+
+    <div class="hero-cards">
+      <div class="hcard">
+        <div class="hcard-icon">📄</div>
+        <div><div class="hcard-label">Resume Analyzer</div><div class="hcard-sub">ATS score & gaps</div></div>
+      </div>
+      <div class="hcard">
+        <div class="hcard-icon">🧠</div>
+        <div><div class="hcard-label">Aptitude Tests</div><div class="hcard-sub">15 MCQs with timer</div></div>
+      </div>
+      <div class="hcard">
+        <div class="hcard-icon">🎤</div>
+        <div><div class="hcard-label">GD Simulation</div><div class="hcard-sub">AI group discussion</div></div>
+      </div>
+      <div class="hcard">
+        <div class="hcard-icon">🤖</div>
+        <div><div class="hcard-label">Mock Interview</div><div class="hcard-sub">Real-time evaluation</div></div>
+      </div>
+    </div>
+
+    <div class="hero-stats">
+      <div class="hstat"><div class="hstat-num">50K+</div><div class="hstat-lbl">Students Trained</div></div>
+      <div class="hstat"><div class="hstat-num">4.8★</div><div class="hstat-lbl">Avg Rating</div></div>
+      <div class="hstat"><div class="hstat-num">92%</div><div class="hstat-lbl">Placement Rate</div></div>
+      <div class="hstat"><div class="hstat-num">500+</div><div class="hstat-lbl">Companies</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════╗
+     SCREEN 2: AUTH PAGE
+╚══════════════════════════════════════╝ -->
+<div class="screen" id="screen-auth">
+  <!-- Left Panel -->
+  <div class="auth-left">
+    <div class="auth-left-content">
+      <div class="auth-brand">
+        <div class="logo-mark" style="width:36px;height:36px;font-size:13px">CP</div>
+        <div class="auth-brand-name">Career<span>Prep</span> AI</div>
+      </div>
+
+      <div class="auth-headline">Your Career<br><em>Starts Here</em></div>
+      <p class="auth-tagline">AI-powered coaching that gets you job-ready — from resume to final round offer.</p>
+
+      <div class="auth-features">
+        <div class="auth-feat">
+          <div class="feat-icon">📄</div>
+          <div class="feat-text">
+            <strong>Smart Resume Analysis</strong>
+            <span>ATS scoring, skill gap detection & improvement tips</span>
+          </div>
+        </div>
+        <div class="auth-feat">
+          <div class="feat-icon">🧠</div>
+          <div class="feat-text">
+            <strong>Aptitude Test Engine</strong>
+            <span>15 timed MCQs with detailed explanations</span>
+          </div>
+        </div>
+        <div class="auth-feat">
+          <div class="feat-icon">🎤</div>
+          <div class="feat-text">
+            <strong>Live GD Simulation</strong>
+            <span>Real-time group discussion with AI participants</span>
+          </div>
+        </div>
+        <div class="auth-feat">
+          <div class="feat-icon">🤖</div>
+          <div class="feat-text">
+            <strong>AI Mock Interview</strong>
+            <span>Per-answer scoring with detailed feedback</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel: Forms -->
+  <div class="auth-right">
+    <!-- Tabs -->
+    <div class="auth-tabs" style="max-width:420px;width:100%">
+      <div class="auth-tab active" id="tab-login" onclick="switchTab('login')">Log In</div>
+      <div class="auth-tab" id="tab-register" onclick="switchTab('register')">Sign Up</div>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div class="auth-form" id="form-login">
+      <div class="auth-form-title">Welcome back 👋</div>
+      <div class="auth-form-sub">Log in to continue your career journey</div>
+
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <div class="input-wrap">
+          <span class="input-icon">✉️</span>
+          <input type="email" id="login-email" placeholder="arjun@college.edu">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="login-pass" placeholder="Enter your password">
+          <button class="pw-toggle" onclick="togglePw('login-pass',this)">👁</button>
+        </div>
+      </div>
+      <div style="text-align:right;margin-bottom:20px">
+        <a href="#" style="font-size:13px;color:var(--indigo);font-weight:600;text-decoration:none" onclick="doForgotPassword()">Forgot password?</a>
+      </div>
+
+      <button class="btn-auth" id="btnLogin" onclick="doLogin()">
+        <span class="btn-text">Log In →</span>
+        <div class="spinner"></div>
+      </button>
+
+      <div class="divider">or continue with</div>
+      <div class="social-btns">
+        <button class="btn-social" onclick="doGoogleLogin()"><svg width="16" height="16" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg> Google</button>
+        <button class="btn-social" onclick="showToast('LinkedIn login: add LinkedIn OAuth app ID to enable','info')"><svg width="16" height="16" viewBox="0 0 24 24" fill="#0A66C2"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> LinkedIn</button>
+      </div>
+
+      <div style="text-align:center;margin-top:20px;font-size:13px;color:var(--text-3)">
+        Don't have an account? <a href="#" onclick="switchTab('register')" style="color:var(--indigo);font-weight:700;text-decoration:none">Sign Up Free →</a>
+      </div>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div class="auth-form hidden" id="form-register">
+      <div class="auth-form-title">Create your account ✨</div>
+      <div class="auth-form-sub">Join 50,000+ students preparing for placements</div>
+
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">First Name</label>
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input type="text" id="reg-fname" placeholder="Arjun">
+          </div>
+          <div class="err-msg" id="err-fname">⚠ Required</div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Last Name</label>
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input type="text" id="reg-lname" placeholder="Sharma">
+          </div>
+          <div class="err-msg" id="err-lname">⚠ Required</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <div class="input-wrap">
+          <span class="input-icon">✉️</span>
+          <input type="email" id="reg-email" placeholder="arjun@college.edu">
+        </div>
+        <div class="err-msg" id="err-email">⚠ Enter a valid email</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Target Role</label>
+        <div class="input-wrap">
+          <span class="input-icon">💼</span>
+          <select id="reg-target" style="padding-left:44px">
+            <option>Software Engineer</option>
+            <option>Data Analyst</option>
+            <option>Product Manager</option>
+            <option>Frontend Developer</option>
+            <option>ML Engineer</option>
+            <option>Business Analyst</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">I am a</label>
+        <div class="role-grid">
+          <label class="role-opt"><input type="radio" name="urole" value="Student" checked><div class="role-lbl"><div class="role-emoji">🎓</div><div class="role-name">Student</div><div class="role-desc">Campus placement</div></div></label>
+          <label class="role-opt"><input type="radio" name="urole" value="Fresher"><div class="role-lbl"><div class="role-emoji">💼</div><div class="role-name">Fresher</div><div class="role-desc">0–1 year exp</div></div></label>
+          <label class="role-opt"><input type="radio" name="urole" value="Professional"><div class="role-lbl"><div class="role-emoji">🚀</div><div class="role-name">Professional</div><div class="role-desc">Switching roles</div></div></label>
+          <label class="role-opt"><input type="radio" name="urole" value="Mentor"><div class="role-lbl"><div class="role-emoji">🧑‍🏫</div><div class="role-name">Mentor</div><div class="role-desc">Guiding others</div></div></label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="reg-pass" placeholder="Create a strong password" oninput="checkStrength(this.value)">
+          <button class="pw-toggle" onclick="togglePw('reg-pass',this)">👁</button>
+        </div>
+        <div class="strength-row"><div class="str-seg" id="ss1"></div><div class="str-seg" id="ss2"></div><div class="str-seg" id="ss3"></div><div class="str-seg" id="ss4"></div></div>
+        <div class="str-label" id="strLabel">Enter a password</div>
+        <div class="err-msg" id="err-pass">⚠ Minimum 8 characters</div>
+      </div>
+
+      <div class="check-row">
+        <label class="check-box-wrap"><input type="checkbox" id="reg-terms"><span class="check-box-vis"></span></label>
+        <div class="check-text">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>. My data will only be used for career readiness evaluation.</div>
+      </div>
+
+      <button class="btn-auth" id="btnRegister" onclick="doRegister()">
+        <span class="btn-text">Create Account & Get Started →</span>
+        <div class="spinner"></div>
+      </button>
+
+      <div style="text-align:center;margin-top:16px;font-size:13px;color:var(--text-3)">
+        Already have an account? <a href="#" onclick="switchTab('login')" style="color:var(--indigo);font-weight:700;text-decoration:none">Log In →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════╗
+     SCREEN 3: MAIN APP
+╚══════════════════════════════════════╝ -->
+<div class="screen" id="screen-app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <div class="sb-logo">CP</div>
+      <div>
+        <div class="sb-brand-name">Career<span>Prep</span></div>
+        <div class="sb-brand-sub">AI Career Platform</div>
+      </div>
+    </div>
+
+    <div class="sb-user">
+      <div class="sb-av" id="sbAvatar">?</div>
+      <div>
+        <div class="sb-user-name" id="sbName">—</div>
+        <div class="sb-user-role" id="sbRole">—</div>
+      </div>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="sb-section-label">Overview</div>
+      <div class="sb-item active" id="nav-home" onclick="goTo('home')">
+        <div class="sb-item-icon">🏠</div>
+        <span class="sb-item-label">Home</span>
+      </div>
+      <div class="sb-item" id="nav-dashboard" onclick="tryGoTo('dashboard')">
+        <div class="sb-item-icon">🎯</div>
+        <span class="sb-item-label">Dashboard</span>
+        <span class="sb-badge sb-badge-lock" id="badge-dashboard">🔒</span>
+      </div>
+
+      <div class="sb-section-label">Recruitment Pipeline</div>
+      <div class="sb-item" id="nav-resume" onclick="tryGoTo('resume')">
+        <div class="sb-item-icon">📄</div>
+        <span class="sb-item-label">Resume Analyzer</span>
+        <span class="sb-badge sb-badge-ready" id="badge-resume">Step 1</span>
+      </div>
+      <div class="sb-item locked" id="nav-aptitude" onclick="tryGoTo('aptitude')">
+        <div class="sb-item-icon">🧠</div>
+        <span class="sb-item-label">Aptitude Test</span>
+        <span class="sb-badge sb-badge-lock" id="badge-aptitude">🔒</span>
+      </div>
+      <div class="sb-item locked" id="nav-technical" onclick="tryGoTo('technical')">
+        <div class="sb-item-icon">💻</div>
+        <span class="sb-item-label">Technical Test</span>
+        <span class="sb-badge sb-badge-lock" id="badge-technical">🔒</span>
+      </div>
+      <div class="sb-item locked" id="nav-gd" onclick="tryGoTo('gd')">
+        <div class="sb-item-icon">🎤</div>
+        <span class="sb-item-label">GD Simulation</span>
+        <span class="sb-badge sb-badge-lock" id="badge-gd">🔒</span>
+      </div>
+      <div class="sb-item locked" id="nav-interview" onclick="tryGoTo('interview')">
+        <div class="sb-item-icon">🤖</div>
+        <span class="sb-item-label">AI Interview</span>
+        <span class="sb-badge sb-badge-lock" id="badge-interview">🔒</span>
+      </div>
+
+      <div class="sb-section-label">Resources</div>
+      <div class="sb-item" id="nav-history" onclick="goTo('history')">
+        <div class="sb-item-icon">🕐</div>
+        <span class="sb-item-label">Session History</span>
+        <span id="historyBadge" style="background:var(--indigo-pale);color:var(--indigo);border:1px solid rgba(67,97,238,.3);border-radius:100px;padding:2px 7px;font-size:10px;font-weight:700;flex-shrink:0">0</span>
+      </div>
+      <div class="sb-item" id="nav-tips" onclick="goTo('tips')">
+        <div class="sb-item-icon">📚</div>
+        <span class="sb-item-label">Interview Tips</span>
+        <span style="background:#e8faf8;color:var(--teal);border:1px solid rgba(10,181,160,.3);border-radius:100px;padding:2px 7px;font-size:10px;font-weight:700;flex-shrink:0">Free</span>
+      </div>
+      <div class="sb-item" id="nav-templates" onclick="goTo('templates')">
+        <div class="sb-item-icon">📝</div>
+        <span class="sb-item-label">Resume Templates</span>
+        <span style="background:#e8faf8;color:var(--teal);border:1px solid rgba(10,181,160,.3);border-radius:100px;padding:2px 7px;font-size:10px;font-weight:700;flex-shrink:0">Free</span>
+      </div>
+    </nav>
+
+    <div class="sb-progress">
+      <div class="sb-prog-top">
+        <span>Overall Progress</span>
+        <span id="progPct">0%</span>
+      </div>
+      <div class="sb-prog-bar"><div class="sb-prog-fill" id="progFill" style="width:0%"></div></div>
+      <div class="sb-prog-sub" id="progSub">0 of 4 modules completed</div>
+    </div>
+
+    <button class="sb-logout" onclick="doLogout()">🚪 Log Out</button>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="app-main">
+    <div class="topbar">
+      <div class="tb-crumb">CareerPrep AI &rsaquo; <strong id="crumbText">Home</strong></div>
+      <div class="tb-right">
+        <div class="tb-chip"><div class="dot"></div> AI Active</div>
+        <div class="tb-chip" onclick="exportPDF()">⬇ Export Report</div>
+      </div>
+    </div>
+
+    <!-- HOME PAGE -->
+    <div class="page active" id="page-home">
+      <div class="page-head">
+        <div class="eyebrow badge-indigo">👋 Welcome Back</div>
+        <h1 class="page-title">Hello, <span class="text-indigo" id="welcomeName">there</span>!</h1>
+        <p class="page-sub">Here's your career preparation journey. Complete each module in order to unlock the next one and build your readiness score.</p>
+      </div>
+
+      <!-- Progress overview -->
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;margin-bottom:24px">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">🗺️ Your Journey — Step by Step</div><div class="card-sub-t">Complete in order to unlock next module</div></div>
+          <div class="card-bd">
+            <!-- Step 1 -->
+            <div id="journey-resume" style="display:flex;align-items:center;gap:16px;padding:16px;border-radius:var(--r-lg);border:2px solid rgba(67,97,238,0.2);background:var(--indigo-pale);margin-bottom:12px;cursor:pointer;transition:all .2s" onclick="goTo('resume')">
+              <div style="width:44px;height:44px;border-radius:12px;background:var(--indigo);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📄</div>
+              <div style="flex:1">
+                <div style="font-weight:800;color:var(--text);margin-bottom:2px">Step 1 — Resume Analyzer</div>
+                <div class="text-sm text-dim">Upload your resume for ATS scoring, skill gap analysis & improvement tips</div>
+              </div>
+              <div id="step1-status" class="badge badge-indigo">Start →</div>
+            </div>
+            <!-- Step 2 -->
+            <div id="journey-aptitude" style="display:flex;align-items:center;gap:16px;padding:16px;border-radius:var(--r-lg);border:2px solid var(--border);background:var(--surface2);margin-bottom:12px;opacity:0.5;cursor:not-allowed;transition:all .2s">
+              <div style="width:44px;height:44px;border-radius:12px;background:var(--surface3);color:var(--text-4);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🧠</div>
+              <div style="flex:1">
+                <div style="font-weight:800;color:var(--text);margin-bottom:2px">Step 2 — Aptitude Test</div>
+                <div class="text-sm text-dim">20 MCQs covering 6 categories: Quantitative, Logical, Verbal, Technical, Data & GK</div>
+              </div>
+              <div class="badge badge-gray">🔒 Locked</div>
+            </div>
+            <!-- Step 2B -->
+            <div id="journey-technical" style="display:flex;align-items:center;gap:16px;padding:16px;border-radius:var(--r-lg);border:2px solid var(--border);background:var(--surface2);margin-bottom:12px;opacity:0.5;cursor:not-allowed;transition:all .2s">
+              <div style="width:44px;height:44px;border-radius:12px;background:var(--surface3);color:var(--text-4);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">💻</div>
+              <div style="flex:1">
+                <div style="font-weight:800;color:var(--text);margin-bottom:2px">Step 2B — Technical Test</div>
+                <div class="text-sm text-dim">5 MCQs + 3 Coding problems + 2 Debug challenges with live code editor</div>
+              </div>
+              <div class="badge badge-gray">🔒 Locked</div>
+            </div>
+            <!-- Step 3 -->
+            <div id="journey-gd" style="display:flex;align-items:center;gap:16px;padding:16px;border-radius:var(--r-lg);border:2px solid var(--border);background:var(--surface2);margin-bottom:12px;opacity:0.5;cursor:not-allowed;transition:all .2s">
+              <div style="width:44px;height:44px;border-radius:12px;background:var(--surface3);color:var(--text-4);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎤</div>
+              <div style="flex:1">
+                <div style="font-weight:800;color:var(--text);margin-bottom:2px">Step 3 — GD Simulation</div>
+                <div class="text-sm text-dim">Join a live AI group discussion and get scored on communication & leadership</div>
+              </div>
+              <div class="badge badge-gray">🔒 Locked</div>
+            </div>
+            <!-- Step 4 -->
+            <div id="journey-interview" style="display:flex;align-items:center;gap:16px;padding:16px;border-radius:var(--r-lg);border:2px solid var(--border);background:var(--surface2);margin-bottom:12px;opacity:0.5;cursor:not-allowed;transition:all .2s">
+              <div style="width:44px;height:44px;border-radius:12px;background:var(--surface3);color:var(--text-4);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🤖</div>
+              <div style="flex:1">
+                <div style="font-weight:800;color:var(--text);margin-bottom:2px">Step 4 — AI Mock Interview</div>
+                <div class="text-sm text-dim">Face a realistic AI interviewer and get per-answer scores & feedback</div>
+              </div>
+              <div class="badge badge-gray">🔒 Locked</div>
+            </div>
+            <!-- Step 5 -->
+            <div id="journey-dashboard" style="display:flex;align-items:center;gap:16px;padding:16px;border-radius:var(--r-lg);border:2px solid var(--border);background:var(--surface2);opacity:0.5;cursor:not-allowed;transition:all .2s">
+              <div style="width:44px;height:44px;border-radius:12px;background:var(--surface3);color:var(--text-4);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🎯</div>
+              <div style="flex:1">
+                <div style="font-weight:800;color:var(--text);margin-bottom:2px">Final — Career Readiness Report</div>
+                <div class="text-sm text-dim">Your complete career readiness score, radar chart & personalised action plan</div>
+              </div>
+              <div class="badge badge-gray">🔒 Locked</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right side -->
+        <div>
+          <div class="card mb-16">
+            <div class="card-hd"><div class="card-title">📊 Current Score</div></div>
+            <div class="card-bd" style="text-align:center">
+              <div style="font-family:var(--font-h);font-size:52px;font-weight:900;color:var(--indigo);line-height:1" id="homeScore">0%</div>
+              <div class="text-sm text-dim" style="margin:6px 0 16px">Career Readiness Score</div>
+              <div class="prog-wrap" style="text-align:left">
+                <div class="prog-hd"><span class="prog-label">📄 Resume</span><span class="prog-val" id="hs-resume">—</span></div>
+                <div class="prog-bar"><div class="prog-fill" id="hf-resume" style="width:0%;background:var(--indigo)"></div></div>
+              </div>
+              <div class="prog-wrap" style="text-align:left">
+                <div class="prog-hd"><span class="prog-label">🧠 Aptitude</span><span class="prog-val" id="hs-aptitude">—</span></div>
+                <div class="prog-bar"><div class="prog-fill" id="hf-aptitude" style="width:0%;background:var(--violet)"></div></div>
+              </div>
+              <div class="prog-wrap" style="text-align:left">
+                <div class="prog-hd"><span class="prog-label">🎤 GD</span><span class="prog-val" id="hs-gd">—</span></div>
+                <div class="prog-bar"><div class="prog-fill" id="hf-gd" style="width:0%;background:var(--teal)"></div></div>
+              </div>
+              <div class="prog-wrap" style="text-align:left;margin-bottom:0">
+                <div class="prog-hd"><span class="prog-label">🤖 Interview</span><span class="prog-val" id="hs-interview">—</span></div>
+                <div class="prog-bar"><div class="prog-fill" id="hf-interview" style="width:0%;background:var(--amber)"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-hd"><div class="card-title">💡 Next Action</div></div>
+            <div class="card-bd">
+              <div id="nextActionCard" style="background:var(--indigo-pale);border:1px solid rgba(67,97,238,0.15);border-radius:var(--r);padding:14px">
+                <div style="font-size:24px;margin-bottom:8px">📄</div>
+                <div style="font-weight:800;color:var(--text);margin-bottom:4px" id="nextActionTitle">Start with Resume</div>
+                <div class="text-sm text-dim mb-12" id="nextActionDesc">Upload your resume to get your ATS score and begin your journey.</div>
+                <button class="btn btn-primary btn-sm" id="nextActionBtn" onclick="goTo('resume')">Go to Resume Analyzer →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tips -->
+      <div class="card">
+        <div class="card-hd"><div class="card-title">🌟 Placement Tips</div><div class="card-sub-t">From our top-placed students</div></div>
+        <div class="card-bd">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+            <div style="background:var(--indigo-pale);border-radius:var(--r);padding:16px;border:1px solid rgba(67,97,238,0.12)"><div style="font-size:20px;margin-bottom:8px">📝</div><div style="font-weight:800;color:var(--text);margin-bottom:4px;font-size:13px">Tailor Your Resume</div><div class="text-sm text-dim">Match your resume keywords with each job description. ATS systems filter out 75% of resumes before human review.</div></div>
+            <div style="background:var(--teal-pale);border-radius:var(--r);padding:16px;border:1px solid rgba(10,181,160,0.12)"><div style="font-size:20px;margin-bottom:8px">🗣️</div><div style="font-weight:800;color:var(--text);margin-bottom:4px;font-size:13px">Speak First in GD</div><div class="text-sm text-dim">Students who open the discussion or summarise at the end score 30% higher on leadership metrics.</div></div>
+            <div style="background:var(--amber-pale);border-radius:var(--r);padding:16px;border:1px solid rgba(247,147,30,0.12)"><div style="font-size:20px;margin-bottom:8px">⭐</div><div style="font-weight:800;color:var(--text);margin-bottom:4px;font-size:13px">Use STAR in Interviews</div><div class="text-sm text-dim">Structure every behavioural answer as Situation → Task → Action → Result. Interviewers love clarity.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESUME PAGE -->
+    <div class="page" id="page-resume">
+      <div class="page-head">
+        <div class="eyebrow badge-indigo">📄 Module 1</div>
+        <h1 class="page-title">Resume <span class="text-indigo">Analyzer</span></h1>
+        <p class="page-sub">Upload your resume file OR paste the text below for AI-powered ATS scoring, skill gap analysis & improvement suggestions</p>
+      </div>
+      <div id="resume-upload-state">
+        <div class="resume-input-tabs">
+          <div class="resume-input-tab active" id="rtab-upload" onclick="switchResumeTab('upload')">📂 Upload File</div>
+          <div class="resume-input-tab" id="rtab-paste" onclick="switchResumeTab('paste')">📋 Paste Text</div>
+        </div>
+        <!-- Upload Tab -->
+        <div id="resume-tab-upload">
+          <div class="upload-zone mb-16" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <span class="upload-icon">📄</span>
+            <div class="upload-title">Drop your resume here</div>
+            <div class="upload-sub">Drag & drop or click to browse — PDF, DOCX, TXT · Max 5 MB</div>
+            <button class="btn btn-primary" onclick="event.stopPropagation();document.getElementById('fileInput').click()">📂 Browse Files</button>
+          </div>
+          <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt">
+          <div class="file-preview" id="filePreview">
+            <div class="file-ico" id="fileTypeIcon">📄</div>
+            <div><strong id="previewName">resume.pdf</strong><div class="text-sm text-dim" id="previewSize">—</div></div>
+            <button class="file-remove" onclick="clearFile()">✕</button>
+          </div>
+        </div>
+        <!-- Paste Tab -->
+        <div id="resume-tab-paste" style="display:none">
+          <div style="margin-bottom:12px">
+            <div style="font-size:12px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Paste your resume content below</div>
+            <textarea class="resume-paste-area" id="resumePasteText" placeholder="Paste your complete resume here — include your name, contact info, skills, work experience, projects and education...&#10;&#10;Example:&#10;John Doe | john@email.com | GitHub: github.com/johndoe&#10;Skills: Python, React, SQL, Git, REST APIs...&#10;Experience: Software Engineer Intern at...&#10;Projects: Built a...&#10;Education: B.Tech Computer Science..."></textarea>
+          </div>
+          <div style="font-size:12px;color:var(--text-3)">💡 Tip: Copy-paste your resume text for the most accurate analysis. The AI will detect skills, sections, and provide specific feedback.</div>
+        </div>
+        <button class="btn btn-primary btn-lg mt-16" id="btnAnalyze" onclick="startResumeAnalysis()" disabled>
+          <span class="btn-text">🤖 Analyze My Resume</span><div class="btn-spinner"></div>
+        </button>
+      </div>
+      <div class="analyze-screen" id="resume-analyzing">
+        <div class="ai-spin">🤖</div>
+        <div style="font-family:var(--font-h);font-size:20px;font-weight:800;margin-bottom:6px">AI is reading your resume…</div>
+        <div class="text-sm text-dim">This takes just a few seconds</div>
+        <div class="step-list">
+          <div class="step-row active" id="rs1">📖 Parsing document structure</div>
+          <div class="step-row" id="rs2">🔍 Extracting skills & keywords</div>
+          <div class="step-row" id="rs3">📊 Calculating ATS score</div>
+          <div class="step-row" id="rs4">💡 Generating recommendations</div>
+        </div>
+      </div>
+      <div id="resume-results" class="hidden">
+        <div style="display:grid;grid-template-columns:300px 1fr;gap:20px;margin-bottom:20px">
+          <div class="card">
+            <div class="card-bd text-center">
+              <div class="text-xs text-dim mb-12" style="text-transform:uppercase;letter-spacing:1px;font-weight:800">Overall Resume Score</div>
+              <div class="ring-wrap mb-16">
+                <svg viewBox="0 0 170 170" width="170" height="170">
+                  <circle class="ring-bg-c" cx="85" cy="85" r="72"/>
+                  <circle class="ring-fg" id="resumeRing" cx="85" cy="85" r="72" stroke="url(#rGrad)"/>
+                  <defs><linearGradient id="rGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#4361ee"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs>
+                </svg>
+                <div class="ring-center"><div class="ring-num" id="resumeScore">78</div></div>
+              </div>
+              <div style="font-family:var(--font-h);font-size:17px;font-weight:800;color:var(--indigo);margin-bottom:5px" id="resumeGradeLabel">Good ⭐</div>
+              <div class="text-sm text-dim mb-20" id="resumeGradeSub">Strong profile with room to grow</div>
+              <div id="resumeScoreDims"></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card"><div class="card-hd"><div class="card-title">✅ Skills Detected</div><div class="card-sub-t" id="skillsFoundCount">—</div></div><div class="card-bd"><div id="skillsFound" style="display:flex;flex-wrap:wrap;gap:4px"></div></div></div>
+            <div class="card"><div class="card-hd"><div class="card-title">⚠️ Skill Gaps</div><div class="card-sub-t">Missing for most roles</div></div><div class="card-bd"><div id="skillsMissing" style="display:flex;flex-wrap:wrap;gap:4px"></div></div></div>
+          </div>
+        </div>
+        <div class="card mb-16"><div class="card-hd"><div class="card-title">💬 AI Feedback & Recommendations</div></div><div class="card-bd"><div class="fb-list" id="resumeFeedback"></div></div></div>
+        <div class="card mb-16" id="resumeKeywordCard" style="display:none"><div class="card-hd"><div class="card-title">🏷️ All Keywords Extracted</div><div class="card-sub-t" id="resumeKeywordCount">—</div></div><div class="card-bd"><div id="resumeKeywords" style="display:flex;flex-wrap:wrap;gap:4px"></div></div></div>
+        <div class="card mb-16" id="resumeTextCard" style="display:none"><div class="card-hd"><div class="card-title" style="cursor:pointer" onclick="document.getElementById('resumeTextBody').style.display=document.getElementById('resumeTextBody').style.display==='none'?'block':'none'">📄 Parsed Resume Text ▾ <span style="font-size:11px;font-weight:500;color:var(--text-3)">(click to toggle)</span></div></div><div class="card-bd" id="resumeTextBody" style="display:none"><pre id="resumeParsedText" style="font-size:11px;line-height:1.7;color:var(--text-2);white-space:pre-wrap;background:var(--surface2);padding:14px;border-radius:var(--r);max-height:300px;overflow-y:auto;font-family:'Courier New',monospace"></pre></div></div>
+        <div class="flex gap-10">
+          <button class="btn btn-primary" onclick="goTo('aptitude')">Next: Aptitude Test →</button>
+          <button class="btn btn-ghost" onclick="resetResume()">🔄 Analyze Another</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- APTITUDE PAGE -->
+    <div class="page" id="page-aptitude">
+
+      <!-- STUDY MATERIALS STATE -->
+      <div id="apt-study">
+        <div class="page-head">
+          <div class="eyebrow badge-violet">📚 Study First</div>
+          <h1 class="page-title">Aptitude <span class="text-violet">Question Papers</span></h1>
+          <p class="page-sub">Review sample questions and theory for all 6 categories before you take the timed test. Click any question to reveal the answer.</p>
+        </div>
+        <!-- Category Tabs -->
+        <div class="study-tabs" id="studyTabs">
+          <div class="study-tab active" onclick="switchStudyTab('quant',this)"><span>📐</span> Quantitative <span class="tab-count">8</span></div>
+          <div class="study-tab" onclick="switchStudyTab('logical',this)"><span>🧩</span> Logical <span class="tab-count">8</span></div>
+          <div class="study-tab" onclick="switchStudyTab('verbal',this)"><span>📝</span> Verbal <span class="tab-count">7</span></div>
+          <div class="study-tab" onclick="switchStudyTab('technical',this)"><span>💻</span> Technical <span class="tab-count">8</span></div>
+          <div class="study-tab" onclick="switchStudyTab('data',this)"><span>📊</span> Data Interpretation <span class="tab-count">5</span></div>
+          <div class="study-tab" onclick="switchStudyTab('gk',this)"><span>🌍</span> General Knowledge <span class="tab-count">4</span></div>
+        </div>
+
+        <!-- Quantitative Panel -->
+        <div class="study-panel active" id="sp-quant">
+          <div class="study-theory">
+            <div class="study-theory-title">📐 Quantitative Aptitude — Key Concepts</div>
+            <div class="theory-point"><span class="theory-point-icon">🔢</span><span><strong>Speed, Distance, Time:</strong> Distance = Speed × Time. Average speed = Total Distance ÷ Total Time. For two equal distances: Avg speed = 2ab/(a+b)</span></div>
+            <div class="theory-point"><span class="theory-point-icon">%</span><span><strong>Percentages:</strong> x% of y = (x/100)×y. Successive % change of a% and b% = a+b+(ab/100). Profit % = (Profit/CP)×100</span></div>
+            <div class="theory-point"><span class="theory-point-icon">📅</span><span><strong>Time & Work:</strong> If A does a job in n days, A's 1-day work = 1/n. Combined work = sum of individual rates. Pipes: filling positive, draining negative.</span></div>
+            <div class="theory-point"><span class="theory-point-icon">💰</span><span><strong>Simple & Compound Interest:</strong> SI = PRT/100. CI = P(1+r/100)ⁿ − P. Effective rate for 2 years CI = r + r + r²/100</span></div>
+          </div>
+          <div class="sample-qs-title">📋 Sample Questions — Click to Reveal Answers</div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q1. A train travels 300 km in 4 hours. What is its average speed?</div><div class="sample-q-answer"><strong>✅ Answer: 75 km/h</strong>Speed = Distance ÷ Time = 300 ÷ 4 = <strong>75 km/h</strong>. Always check units — if distance is in km and time in hours, speed is km/h.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q2. If 20% of a number is 50, what is 60% of that number?</div><div class="sample-q-answer"><strong>✅ Answer: 150</strong>20% = 50 → 100% = 250 (multiply by 5). Then 60% of 250 = (60/100) × 250 = <strong>150</strong>. Tip: always find 100% first, then calculate required %.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q3. A and B together can complete work in 8 days. A alone takes 12 days. How many days for B alone?</div><div class="sample-q-answer"><strong>✅ Answer: 24 days</strong>A+B rate = 1/8. A's rate = 1/12. B's rate = 1/8 − 1/12 = 3/24 − 2/24 = 1/24. So B alone = <strong>24 days</strong>.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q4. Shopkeeper marks up by 40%, gives 10% discount. What is profit %?</div><div class="sample-q-answer"><strong>✅ Answer: 26%</strong>Let CP = 100. MP = 140. SP = 140 × 0.9 = 126. Profit = 126 − 100 = <strong>26%</strong>. Formula: (1+M/100)(1−D/100) − 1.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q5. Two pipes fill tank in 20 and 30 minutes. Together, how long?</div><div class="sample-q-answer"><strong>✅ Answer: 12 minutes</strong>Pipe A rate = 1/20, Pipe B rate = 1/30. Combined = 1/20 + 1/30 = 3/60 + 2/60 = 5/60 = 1/12. Time = <strong>12 minutes</strong>.</div></div>
+          <div class="study-tips">
+            <div class="study-tips-title">💡 Quick Tips for Quantitative</div>
+            <div class="study-tip">⚡ <span>Memorise square roots of 1–25 and cubes of 1–10 for faster calculation</span></div>
+            <div class="study-tip">⚡ <span>For profit/loss: always express profit/loss as % of Cost Price (CP), not Selling Price</span></div>
+            <div class="study-tip">⚡ <span>In ratio problems: assign a variable 'x' to the ratio unit and solve algebraically</span></div>
+          </div>
+        </div>
+
+        <!-- Logical Panel -->
+        <div class="study-panel" id="sp-logical">
+          <div class="study-theory">
+            <div class="study-theory-title">🧩 Logical Reasoning — Key Concepts</div>
+            <div class="theory-point"><span class="theory-point-icon">🔢</span><span><strong>Series:</strong> Look at differences (arithmetic), ratios (geometric), or alternating patterns. For complex series, check differences of differences.</span></div>
+            <div class="theory-point"><span class="theory-point-icon">📋</span><span><strong>Syllogisms:</strong> All A are B + All B are C → All A are C. Some A are B + All B are C → Some A are C. Draw Venn diagrams to verify.</span></div>
+            <div class="theory-point"><span class="theory-point-icon">👨‍👩‍👧</span><span><strong>Blood Relations:</strong> Map relationships step by step. Remember: Father's/Mother's brother = Uncle; Father's/Mother's sister = Aunt; their children = Cousins.</span></div>
+            <div class="theory-point"><span class="theory-point-icon">🔤</span><span><strong>Coding-Decoding:</strong> Check +n/-n shifts on each letter, reverse alphabets, position swaps, or arithmetic patterns on ASCII values.</span></div>
+          </div>
+          <div class="sample-qs-title">📋 Sample Questions</div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q1. Next in series: 2, 6, 12, 20, 30, ?</div><div class="sample-q-answer"><strong>✅ Answer: 42</strong>Differences: 4, 6, 8, 10 (increasing by 2). Next difference = 12. So 30 + 12 = <strong>42</strong>.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q2. ZA, YB, XC, WD, ?</div><div class="sample-q-answer"><strong>✅ Answer: VE</strong>First letter moves backward: Z, Y, X, W, <strong>V</strong>. Second letter moves forward: A, B, C, D, <strong>E</strong>. Answer: VE.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q3. If CODE is written as DPEF, how is LIVE written?</div><div class="sample-q-answer"><strong>✅ Answer: MJWF</strong>Each letter is shifted +1: L→M, I→J, V→W, E→F = <strong>MJWF</strong>.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q4. All Bloops are Razzles. All Razzles are Lazzles. True: All Bloops are Lazzles?</div><div class="sample-q-answer"><strong>✅ Answer: TRUE</strong>Chain syllogism: Bloops → Razzles → Lazzles. So all Bloops are Lazzles. Think of it as sets: Bloops ⊂ Razzles ⊂ Lazzles.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q5. A is B's sister. C is B's mother. D is C's father. A is D's ___?</div><div class="sample-q-answer"><strong>✅ Answer: Granddaughter</strong>A is B's sibling → A is C's child → A is D's grandchild → A is D's <strong>granddaughter</strong>.</div></div>
+          <div class="study-tips">
+            <div class="study-tips-title">💡 Quick Tips for Logical Reasoning</div>
+            <div class="study-tip">⚡ <span>For number series: always check 1st, 2nd-level differences and squares/cubes patterns</span></div>
+            <div class="study-tip">⚡ <span>Blood relations: draw a family tree on rough paper — never try to solve mentally</span></div>
+            <div class="study-tip">⚡ <span>For coding: first verify the pattern with all given letters before choosing your answer</span></div>
+          </div>
+        </div>
+
+        <!-- Verbal Panel -->
+        <div class="study-panel" id="sp-verbal">
+          <div class="study-theory">
+            <div class="study-theory-title">📝 Verbal Ability — Key Concepts</div>
+            <div class="theory-point"><span class="theory-point-icon">📖</span><span><strong>Vocabulary:</strong> Learn prefixes (un-, dis-, pre-), suffixes (-tion, -ness, -ous) and roots (bene=good, mal=bad, phil=love). Build word families.</span></div>
+            <div class="theory-point"><span class="theory-point-icon">✏️</span><span><strong>Grammar Rules:</strong> Subject-verb agreement, tense consistency, pronoun-antecedent agreement, dangling modifiers, and parallel construction are most tested.</span></div>
+            <div class="theory-point"><span class="theory-point-icon">💬</span><span><strong>Idioms:</strong> Cannot be guessed from literal meaning. Learn the 50 most common placement test idioms. E.g. "kick the bucket" = die, "bite the bullet" = endure.</span></div>
+            <div class="theory-point"><span class="theory-point-icon">🔤</span><span><strong>Spelling:</strong> Common traps: accommodation (2c,2m), occurrence (2c,2r), necessary (1c,2s), rhythm (no vowels between r and m).</span></div>
+          </div>
+          <div class="sample-qs-title">📋 Sample Questions</div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q1. Synonym of EPHEMERAL: (a) Eternal (b) Transient (c) Significant (d) Robust</div><div class="sample-q-answer"><strong>✅ Answer: (b) Transient</strong>Ephemeral = lasting for a very short time. Transient = passing, temporary. Memory trick: "Ephemeral like a butterfly" — brief and fleeting.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q2. Antonym of VERBOSE: (a) Wordy (b) Concise (c) Eloquent (d) Fluent</div><div class="sample-q-answer"><strong>✅ Answer: (b) Concise</strong>Verbose = using far more words than needed. Antonym = Concise (brief and clear). Don't confuse with fluent (speaking smoothly).</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q3. Correctly spelled: Accomodation / Accommodation / Acommodation</div><div class="sample-q-answer"><strong>✅ Answer: Accommodation</strong>Double 'c' AND double 'm'. Trick: "1 Cot and 2 Mattresses" → 1c, 2m = acCOmmodation.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q4. What does "burning the midnight oil" mean?</div><div class="sample-q-answer"><strong>✅ Answer: Working or studying late into the night</strong>Origin: before electricity, people used oil lamps for late-night work. Now figuratively means staying up late to work hard.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q5. One-word substitute for "a person who speaks many languages"?</div><div class="sample-q-answer"><strong>✅ Answer: Polyglot</strong>Poly = many, glot = tongue/language. Bilingual = 2 languages. Multilingual = several. Polyglot = many. Linguist = studies language.</div></div>
+          <div class="study-tips">
+            <div class="study-tips-title">💡 Quick Tips for Verbal Ability</div>
+            <div class="study-tip">⚡ <span>Read 3 editorials per week — The Hindu or Economic Times are ideal for placement vocab</span></div>
+            <div class="study-tip">⚡ <span>For fill-in-blanks: read the full sentence, identify tone (positive/negative), then match the word</span></div>
+            <div class="study-tip">⚡ <span>Grammar errors: check subject-verb agreement, pronoun case, and tense consistency first</span></div>
+          </div>
+        </div>
+
+        <!-- Technical Panel -->
+        <div class="study-panel" id="sp-technical">
+          <div class="study-theory">
+            <div class="study-theory-title">💻 Technical / CS — Key Concepts</div>
+            <div class="theory-point"><span class="theory-point-icon">⏱</span><span><strong>Time Complexities:</strong> O(1) hash lookup, O(log n) binary search, O(n) linear scan, O(n log n) merge/quick sort, O(n²) bubble/insertion sort.</span></div>
+            <div class="theory-point"><span class="theory-point-icon">📦</span><span><strong>Data Structures:</strong> Stack = LIFO. Queue = FIFO. Linked List = dynamic size, O(n) search. Binary Tree = O(log n) search if balanced. Hash Map = O(1) average.</span></div>
+            <div class="theory-point"><span class="theory-point-icon">🗄️</span><span><strong>SQL Basics:</strong> SELECT, FROM, WHERE, GROUP BY, HAVING, ORDER BY. JOIN types: INNER (intersection), LEFT (all from left), RIGHT, FULL OUTER.</span></div>
+            <div class="theory-point"><span class="theory-point-icon">🌐</span><span><strong>Networking & OS:</strong> TCP (reliable, connection-oriented), UDP (fast, connectionless). HTTP methods: GET, POST, PUT, DELETE, PATCH. Process vs Thread: separate memory vs shared memory.</span></div>
+          </div>
+          <div class="sample-qs-title">📋 Sample Questions</div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q1. Time complexity of Binary Search?</div><div class="sample-q-answer"><strong>✅ Answer: O(log n)</strong>Binary search halves the search space on each step. After k steps, n/2^k = 1 → k = log₂n. Best case: O(1), Average/Worst: <strong>O(log n)</strong>.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q2. Which data structure uses LIFO? (a) Queue (b) Stack (c) Linked List (d) Tree</div><div class="sample-q-answer"><strong>✅ Answer: (b) Stack</strong>Stack = Last In, First Out. Push adds to top, Pop removes from top. Real-world: function call stack, undo operations. Queue = FIFO (bank lines).</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q3. Which SQL command retrieves data? INSERT / UPDATE / SELECT / DELETE</div><div class="sample-q-answer"><strong>✅ Answer: SELECT</strong>SELECT is DQL (Data Query Language). INSERT = add rows. UPDATE = modify rows. DELETE = remove rows. SELECT syntax: SELECT columns FROM table WHERE condition.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q4. Which is NOT a valid HTTP method: GET / POST / FETCH / DELETE</div><div class="sample-q-answer"><strong>✅ Answer: FETCH</strong>FETCH is a JavaScript browser API, NOT an HTTP method. Valid HTTP methods: GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS, CONNECT.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q5. Which sorting algorithm uses pivot-based partitioning with O(n log n) average?</div><div class="sample-q-answer"><strong>✅ Answer: Quick Sort</strong>Quick Sort picks a pivot, partitions array into &lt;pivot and &gt;pivot, recursively sorts each. Average: O(n log n). Worst case: O(n²) when pivot is always min/max.</div></div>
+          <div class="study-tips">
+            <div class="study-tips-title">💡 Quick Tips for Technical</div>
+            <div class="study-tip">⚡ <span>Memorise complexities for all major algorithms and data structure operations in a table</span></div>
+            <div class="study-tip">⚡ <span>For SQL: practice writing queries with JOINs, GROUP BY and subqueries on paper first</span></div>
+            <div class="study-tip">⚡ <span>OOP: SOLID, ACID (databases), 4 pillars (Encapsulation, Abstraction, Inheritance, Polymorphism)</span></div>
+          </div>
+        </div>
+
+        <!-- Data Interpretation Panel -->
+        <div class="study-panel" id="sp-data">
+          <div class="study-theory">
+            <div class="study-theory-title">📊 Data Interpretation — Key Concepts</div>
+            <div class="theory-point"><span class="theory-point-icon">📈</span><span><strong>Pie Charts:</strong> Sector angle = (Value/Total) × 360°. Percentage = (Value/Total) × 100. If sector angle given, value = (Angle/360°) × Total.</span></div>
+            <div class="theory-point"><span class="theory-point-icon">📊</span><span><strong>Bar & Line Charts:</strong> Always check the Y-axis scale. Compare bar heights visually first. Growth rate = (New - Old)/Old × 100%.</span></div>
+            <div class="theory-point"><span class="theory-point-icon">📋</span><span><strong>Tables:</strong> Read row/column headers carefully. Common traps: % given vs actual value, cumulative vs periodic data, different units.</span></div>
+            <div class="theory-point"><span class="theory-point-icon">🔢</span><span><strong>Sets & Venn Diagrams:</strong> n(A∪B) = n(A) + n(B) − n(A∩B). Elements in neither = Total − n(A∪B). For 3 sets, add all, subtract pairs, add triple overlap.</span></div>
+          </div>
+          <div class="sample-qs-title">📋 Sample Questions</div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q1. Sales: Q1=120, Q2=150, Q3=90, Q4=180. What is the average?</div><div class="sample-q-answer"><strong>✅ Answer: 135</strong>Sum = 120+150+90+180 = 540. Average = 540 ÷ 4 = <strong>135</strong>. Quick tip: look for pairs that average out (120+150=270, 90+180=270, avg=270/2=135).</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q2. A sector in a pie chart = 25% of total. What is the angle?</div><div class="sample-q-answer"><strong>✅ Answer: 90°</strong>Angle = (25/100) × 360° = 0.25 × 360 = <strong>90°</strong>. Remember: 25% = quarter = 90°, 50% = half = 180°, 33.3% = 120°.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q3. Revenue grew from ₹40L to ₹60L. What is % growth?</div><div class="sample-q-answer"><strong>✅ Answer: 50%</strong>Growth = (60−40)/40 × 100 = 20/40 × 100 = <strong>50%</strong>. Note: % growth is always relative to the ORIGINAL (old) value.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q4. 50 students: 30 play cricket, 25 play football, 10 play both. How many play neither?</div><div class="sample-q-answer"><strong>✅ Answer: 5</strong>Playing at least one sport = 30+25−10 = 45. Neither = 50−45 = <strong>5 students</strong>. Inclusion-Exclusion principle.</div></div>
+          <div class="study-tips">
+            <div class="study-tips-title">💡 Quick Tips for Data Interpretation</div>
+            <div class="study-tip">⚡ <span>Always read the Y-axis scale before calculating — it's often in thousands or lakhs</span></div>
+            <div class="study-tip">⚡ <span>For % change: remember denominator is always the ORIGINAL (base) value, not the new one</span></div>
+            <div class="study-tip">⚡ <span>Approximate and eliminate: in DI, options are usually far apart so approximation saves time</span></div>
+          </div>
+        </div>
+
+        <!-- GK Panel -->
+        <div class="study-panel" id="sp-gk">
+          <div class="study-theory">
+            <div class="study-theory-title">🌍 General Knowledge / Current Affairs</div>
+            <div class="theory-point"><span class="theory-point-icon">💻</span><span><strong>Tech Companies & Founders:</strong> Google (Page & Brin), Microsoft (Gates & Allen), Amazon (Bezos), Apple (Jobs & Wozniak), Facebook (Zuckerberg), OpenAI (Altman).</span></div>
+            <div class="theory-point"><span class="theory-point-icon">🇮🇳</span><span><strong>Indian IT Industry:</strong> TCS (largest by revenue), Infosys, Wipro, HCL Tech, Tech Mahindra are top 5. NASSCOM is the industry body. Bengaluru = Silicon Valley of India.</span></div>
+            <div class="theory-point"><span class="theory-point-icon">🔤</span><span><strong>Programming Languages:</strong> Python (ML/AI, by PSF), Java (enterprise), JavaScript (web, Netscape), C (systems, Dennis Ritchie), Ruby (Matz). Git = Linus Torvalds.</span></div>
+            <div class="theory-point"><span class="theory-point-icon">🏆</span><span><strong>Awards & Rankings:</strong> Turing Award = Nobel Prize of Computing. IEEE and ACM are top CS professional bodies. FAANG = Facebook, Apple, Amazon, Netflix, Google.</span></div>
+          </div>
+          <div class="sample-qs-title">📋 Sample Questions</div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q1. Which company developed the Python programming language?</div><div class="sample-q-answer"><strong>✅ Answer: Python Software Foundation (PSF)</strong>Python was created by Guido van Rossum in 1991 and is now managed by the Python Software Foundation. It's open-source and widely used for AI/ML, data science, and web dev.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q2. What is India's largest IT services company by revenue?</div><div class="sample-q-answer"><strong>✅ Answer: TCS (Tata Consultancy Services)</strong>TCS is consistently India's most valuable IT company by market cap and revenue. It's part of the Tata Group. The top 5 are TCS, Infosys, Wipro, HCL Tech, Tech Mahindra.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q3. Which of these is a distributed version control system? Docker / Kubernetes / Git / Jenkins</div><div class="sample-q-answer"><strong>✅ Answer: Git</strong>Git = version control (created by Linus Torvalds, 2005). Docker = containerisation. Kubernetes = container orchestration. Jenkins = CI/CD automation.</div></div>
+          <div class="sample-q-item" onclick="this.classList.toggle('expanded')"><div class="sample-q-text">Q4. Full form of TCP/IP?</div><div class="sample-q-answer"><strong>✅ Answer: Transmission Control Protocol / Internet Protocol</strong>TCP = reliable, connection-oriented, ensures packet delivery in order. IP = addressing and routing. Together they form the foundation of internet communication.</div></div>
+          <div class="study-tips">
+            <div class="study-tips-title">💡 Quick Tips for GK</div>
+            <div class="study-tip">⚡ <span>Read tech news daily — Economic Times Tech or TechCrunch cover placement-relevant GK</span></div>
+            <div class="study-tip">⚡ <span>Know founders, headquarters, and flagship products of top 20 tech companies</span></div>
+            <div class="study-tip">⚡ <span>For government/policy questions, focus on Digital India, startup schemes, and IT Acts</span></div>
+          </div>
+        </div>
+
+        <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <div style="background:var(--green-pale);border:1px solid rgba(34,197,94,0.2);border-radius:var(--r);padding:12px 18px;font-size:13px;color:var(--green);font-weight:700">✅ 40 questions across 6 categories • 25 minutes • +4 correct, −1 wrong</div>
+          <button class="btn btn-primary btn-lg" onclick="goToAptIntro()" style="flex-shrink:0">I'm Ready — Start Test 🚀</button>
+        </div>
+      </div>
+
+      <!-- INTRO STATE -->
+      <div id="apt-intro" class="hidden">
+        <div class="page-head">
+          <div class="eyebrow badge-violet">🧠 Module 2</div>
+          <h1 class="page-title">Aptitude <span class="text-violet">Test</span></h1>
+          <p class="page-sub">20 timed MCQs drawn from all 6 categories. Scoring: +4 correct, −1 wrong. Maximum 80 marks.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px">
+          <div class="stat-card sc-indigo"><span class="stat-icon">📐</span><div class="stat-val text-indigo" style="font-size:18px">Quant</div><div class="stat-label">8 Q bank</div></div>
+          <div class="stat-card sc-violet"><span class="stat-icon">🧩</span><div class="stat-val text-violet" style="font-size:18px">Logical</div><div class="stat-label">8 Q bank</div></div>
+          <div class="stat-card sc-teal"><span class="stat-icon">📝</span><div class="stat-val text-teal" style="font-size:18px">Verbal</div><div class="stat-label">7 Q bank</div></div>
+          <div class="stat-card sc-amber"><span class="stat-icon">💻</span><div class="stat-val text-amber" style="font-size:18px">Tech</div><div class="stat-label">8 Q bank</div></div>
+          <div class="stat-card sc-green"><span class="stat-icon">📊</span><div class="stat-val text-green" style="font-size:18px">Data</div><div class="stat-label">5 Q bank</div></div>
+          <div class="stat-card sc-rose"><span class="stat-icon">🌍</span><div class="stat-val text-rose" style="font-size:18px">GK</div><div class="stat-label">4 Q bank</div></div>
+        </div>
+        <div class="g4 mb-24">
+          <div class="stat-card sc-violet"><span class="stat-icon">❓</span><div class="stat-val text-violet">20</div><div class="stat-label">Questions</div></div>
+          <div class="stat-card sc-indigo"><span class="stat-icon">⏱</span><div class="stat-val text-indigo">25</div><div class="stat-label">Minutes</div></div>
+          <div class="stat-card sc-green"><span class="stat-icon">✅</span><div class="stat-val text-green">+4</div><div class="stat-label">Correct</div></div>
+          <div class="stat-card sc-rose"><span class="stat-icon">❌</span><div class="stat-val text-rose">−1</div><div class="stat-label">Wrong</div></div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <button class="btn btn-ghost" onclick="goToAptStudy()">← Back to Study Materials</button>
+          <button class="btn btn-primary btn-lg" onclick="startAptitude()">🚀 Start Test Now</button>
+        </div>
+      </div>
+
+      <!-- TEST STATE -->
+      <div id="apt-test" class="hidden">
+        <div class="test-header">
+          <div style="font-size:13px;font-weight:700;color:var(--text-2)" id="qCounter">Q 1 / 20</div>
+          <div style="flex:1;margin:0 20px">
+            <div class="flex-between mb-8"><span class="text-xs text-dim">Progress</span><span class="text-xs text-dim" id="aptPct">0%</span></div>
+            <div class="prog-bar" style="height:6px"><div class="prog-fill" id="aptProgFill" style="width:0%;background:linear-gradient(90deg,var(--violet),var(--indigo))"></div></div>
+          </div>
+          <div class="dot-nav" id="dotNav"></div>
+          <div class="timer-disp" id="aptTimer">⏱ 25:00</div>
+        </div>
+        <div class="q-card">
+          <div><span class="badge badge-violet" id="qCat">Quantitative</span></div>
+          <div class="q-text" id="qText">Question text</div>
+          <div class="options-wrap mt-16" id="optionsWrap"></div>
+          <div class="explanation" id="explanation"><strong>💡 Explanation</strong><span id="expText"></span></div>
+        </div>
+        <div class="flex-between mt-16">
+          <button class="btn btn-ghost" id="btnPrev" onclick="prevQ()">← Previous</button>
+          <button class="btn btn-ghost btn-sm" onclick="skipAndNext()">Skip →</button>
+          <button class="btn btn-primary" id="btnNext" onclick="nextQ()">Next →</button>
+        </div>
+      </div>
+
+      <!-- RESULTS STATE -->
+      <div id="apt-results" class="hidden">
+        <div class="result-hero">
+          <span class="result-emoji" id="aptEmoji">🏆</span>
+          <div class="result-title" id="aptResultTitle">Outstanding!</div>
+          <div class="result-sub" id="aptResultSub">Here's your complete performance breakdown</div>
+        </div>
+        <div class="g4 mb-20">
+          <div class="stat-card sc-violet"><span class="stat-icon">📊</span><div class="stat-val text-violet" id="rs-score">—</div><div class="stat-label">Total Score</div></div>
+          <div class="stat-card sc-green"><span class="stat-icon">✅</span><div class="stat-val text-green" id="rs-correct">—</div><div class="stat-label">Correct</div></div>
+          <div class="stat-card sc-rose"><span class="stat-icon">❌</span><div class="stat-val text-rose" id="rs-wrong">—</div><div class="stat-label">Wrong</div></div>
+          <div class="stat-card"><span class="stat-icon">⏭</span><div class="stat-val" style="color:var(--text-3)" id="rs-skip">—</div><div class="stat-label">Skipped</div></div>
+        </div>
+        <!-- Category breakdown -->
+        <div class="card mb-20">
+          <div class="card-hd"><div class="card-title">📂 Category-wise Performance</div><div class="card-sub-t">Your strengths and weak areas</div></div>
+          <div class="card-bd">
+            <div class="cat-results-grid" id="catResultsGrid"></div>
+          </div>
+        </div>
+        <div class="card mb-16"><div class="card-hd"><div class="card-title">📋 Detailed Question Review</div><div class="card-sub-t">Click each entry to review</div></div><div class="card-bd" id="qReview" style="max-height:320px;overflow-y:auto"></div></div>
+        <div class="flex gap-10">
+          <button class="btn btn-primary" onclick="goTo('technical')">Next: Technical Test →</button>
+          <button class="btn btn-ghost" onclick="resetAptitude()">🔄 Retake Test</button>
+          <button class="btn btn-ghost" onclick="goToAptStudy()">📚 Back to Study Materials</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TECHNICAL TEST PAGE -->
+    <div class="page" id="page-technical">
+      <!-- INTRO STATE -->
+      <div id="tech-intro">
+        <div class="page-head">
+          <div class="eyebrow badge-indigo">💻 Module 2B</div>
+          <h1 class="page-title">Technical <span class="text-indigo">Test</span></h1>
+          <p class="page-sub">Prove your coding skills with real problems, MCQs, and debugging challenges. Timed test with live code execution & AI scoring.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px">
+          <div class="stat-card sc-indigo"><span class="stat-icon">🧩</span><div class="stat-val text-indigo">5</div><div class="stat-label">MCQ Questions</div></div>
+          <div class="stat-card sc-teal"><span class="stat-icon">💻</span><div class="stat-val text-teal">3</div><div class="stat-label">Coding Challenges</div></div>
+          <div class="stat-card sc-rose"><span class="stat-icon">🐛</span><div class="stat-val text-rose">2</div><div class="stat-label">Debug Problems</div></div>
+          <div class="stat-card sc-amber"><span class="stat-icon">⏱</span><div class="stat-val text-amber">45</div><div class="stat-label">Minutes</div></div>
+        </div>
+        <div class="card mb-20">
+          <div class="card-hd"><div class="card-title">🎯 What's Tested</div><div class="card-sub-t">Covers core CS concepts relevant to SWE placements</div></div>
+          <div class="card-bd">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--indigo-pale);border-radius:var(--r);border:1px solid rgba(67,97,238,0.1)">
+                <span style="font-size:20px">🧩</span><div><div style="font-weight:800;font-size:13px;margin-bottom:3px">MCQ — CS Concepts</div><div class="text-xs text-dim">OOP, Data Structures, Algorithms, Complexity, OS, DBMS</div></div>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--teal-pale);border-radius:var(--r);border:1px solid rgba(10,181,160,0.1)">
+                <span style="font-size:20px">💻</span><div><div style="font-weight:800;font-size:13px;margin-bottom:3px">Coding — Write & Run</div><div class="text-xs text-dim">Write Python/JavaScript solutions with test case validation</div></div>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--rose-pale);border-radius:var(--r);border:1px solid rgba(244,63,94,0.1)">
+                <span style="font-size:20px">🐛</span><div><div style="font-weight:800;font-size:13px;margin-bottom:3px">Debug — Find & Fix</div><div class="text-xs text-dim">Spot the bug in given code and fix it correctly</div></div>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--amber-pale);border-radius:var(--r);border:1px solid rgba(247,147,30,0.1)">
+                <span style="font-size:20px">📊</span><div><div style="font-weight:800;font-size:13px;margin-bottom:3px">Scoring System</div><div class="text-xs text-dim">MCQ: +4/−1 · Code: up to 20pts per Q · Debug: 10pts each</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <button class="btn btn-primary btn-lg" onclick="startTechTest()">🚀 Start Technical Test</button>
+          <button class="btn btn-ghost" onclick="goTo('aptitude')">← Back to Aptitude</button>
+        </div>
+      </div>
+
+      <!-- TEST STATE -->
+      <div id="tech-test" class="hidden">
+        <div class="test-header">
+          <div style="font-size:13px;font-weight:700;color:var(--text-2)" id="techQCounter">Section 1: MCQ</div>
+          <div style="flex:1;margin:0 20px">
+            <div class="flex-between mb-8"><span class="text-xs text-dim">Overall Progress</span><span class="text-xs text-dim" id="techPct">0%</span></div>
+            <div class="prog-bar" style="height:6px"><div class="prog-fill" id="techProgFill" style="width:0%;background:linear-gradient(90deg,var(--indigo),var(--teal))"></div></div>
+          </div>
+          <div class="dot-nav" id="techDotNav"></div>
+          <div class="timer-disp" id="techTimer">⏱ 45:00</div>
+        </div>
+
+        <!-- Section tabs -->
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button class="tech-lang-tab active" id="tech-tab-mcq" onclick="switchTechSection('mcq')">🧩 MCQ (5)</button>
+          <button class="tech-lang-tab" id="tech-tab-code" onclick="switchTechSection('code')">💻 Coding (3)</button>
+          <button class="tech-lang-tab" id="tech-tab-debug" onclick="switchTechSection('debug')">🐛 Debug (2)</button>
+        </div>
+
+        <!-- MCQ Section -->
+        <div id="tech-section-mcq">
+          <div class="tech-section-hd"><h3>🧩 Multiple Choice Questions</h3><span>+4 correct · −1 wrong · 5 questions</span></div>
+          <div id="tech-mcq-container"></div>
+        </div>
+
+        <!-- Coding Section -->
+        <div id="tech-section-code" class="hidden">
+          <div class="tech-section-hd"><h3>💻 Coding Challenges</h3><span>Write and run your solution · Test cases auto-checked</span></div>
+          <div id="tech-code-container"></div>
+        </div>
+
+        <!-- Debug Section -->
+        <div id="tech-section-debug" class="hidden">
+          <div class="tech-section-hd"><h3>🐛 Debug Challenges</h3><span>Find and fix the bug in each code snippet</span></div>
+          <div id="tech-debug-container"></div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+          <div style="font-size:12px;color:var(--text-3)" id="techSectionStatus">MCQ: 0/5 answered</div>
+          <button class="btn btn-primary btn-lg" onclick="submitTechTest()">Submit Technical Test ✓</button>
+        </div>
+      </div>
+
+      <!-- RESULTS STATE -->
+      <div id="tech-results" class="hidden">
+        <div class="result-hero" style="background:linear-gradient(135deg,var(--indigo-pale),var(--teal-pale));border:1px solid rgba(67,97,238,0.15);border-radius:var(--r-xl)">
+          <span class="result-emoji" id="techEmoji">💻</span>
+          <div class="result-title" id="techResultTitle">Technical Test Complete!</div>
+          <div class="result-sub" id="techResultSub">Your code is evaluated. Here's your full report.</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px">
+          <div class="stat-card sc-indigo"><span class="stat-icon">📊</span><div class="stat-val text-indigo" id="tr-total">—</div><div class="stat-label">Total Score</div></div>
+          <div class="stat-card sc-green"><span class="stat-icon">🧩</span><div class="stat-val text-green" id="tr-mcq">—</div><div class="stat-label">MCQ Score</div></div>
+          <div class="stat-card sc-teal"><span class="stat-icon">💻</span><div class="stat-val text-teal" id="tr-code">—</div><div class="stat-label">Code Score</div></div>
+          <div class="stat-card sc-rose"><span class="stat-icon">🐛</span><div class="stat-val text-rose" id="tr-debug">—</div><div class="stat-label">Debug Score</div></div>
+          <div class="stat-card sc-violet"><span class="stat-icon">⏱</span><div class="stat-val text-violet" id="tr-time">—</div><div class="stat-label">Time Used</div></div>
+        </div>
+        <div class="card mb-20">
+          <div class="card-hd"><div class="card-title">📋 Detailed Review</div><div class="card-sub-t">Question-by-question breakdown</div></div>
+          <div class="card-bd" id="techReviewContainer" style="max-height:400px;overflow-y:auto"></div>
+        </div>
+        <div class="card mb-16">
+          <div class="card-hd"><div class="card-title">💡 AI Feedback & Improvement Tips</div></div>
+          <div class="card-bd" id="techFeedbackContainer"></div>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-lg" onclick="goTo('gd')">Next: GD Simulation →</button>
+          <button class="btn btn-ghost" onclick="resetTechTest()">🔄 Retake Test</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GD PAGE -->
+    <div class="page" id="page-gd">
+      <div id="gd-intro">
+        <div class="page-head">
+          <div class="eyebrow badge-teal">🎤 Module 3</div>
+          <h1 class="page-title">GD <span class="text-teal">Simulation</span></h1>
+          <p class="page-sub">Speak naturally into your microphone. AI participants will listen, respond aloud, and score your communication, reasoning & leadership in real time.</p>
+        </div>
+
+        <!-- Mic permission notice -->
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--teal-pale);border:1px solid rgba(10,181,160,0.3);border-radius:var(--r-lg);margin-bottom:24px">
+          <span style="font-size:24px">🎙️</span>
+          <div>
+            <div style="font-weight:800;font-size:13px;color:var(--text);margin-bottom:2px">Microphone Required</div>
+            <div class="text-sm text-dim">This module uses your microphone to capture speech. Your browser will ask for permission when you launch. AI participants will speak back through your speakers using text-to-speech.</div>
+          </div>
+        </div>
+
+        <div class="g3 mb-20" id="topicGrid">
+          <div class="card" style="cursor:pointer;border-color:rgba(10,181,160,0.35);background:var(--teal-pale)" data-topic="AI will replace human jobs" onclick="selectGDTopic(this)"><div class="card-bd text-center"><div style="font-size:26px;margin-bottom:8px">🤖</div><div style="font-size:13px;font-weight:800;margin-bottom:3px">AI Will Replace Human Jobs</div><div class="text-xs text-dim">Technology & Society</div></div></div>
+          <div class="card" style="cursor:pointer" data-topic="Work from home vs office" onclick="selectGDTopic(this)"><div class="card-bd text-center"><div style="font-size:26px;margin-bottom:8px">🏡</div><div style="font-size:13px;font-weight:800;margin-bottom:3px">WFH vs Office Culture</div><div class="text-xs text-dim">Workplace</div></div></div>
+          <div class="card" style="cursor:pointer" data-topic="Social media — boon or bane" onclick="selectGDTopic(this)"><div class="card-bd text-center"><div style="font-size:26px;margin-bottom:8px">📱</div><div style="font-size:13px;font-weight:800;margin-bottom:3px">Social Media: Boon or Bane?</div><div class="text-xs text-dim">Society</div></div></div>
+          <div class="card" style="cursor:pointer" data-topic="India's startup revolution" onclick="selectGDTopic(this)"><div class="card-bd text-center"><div style="font-size:26px;margin-bottom:8px">🚀</div><div style="font-size:13px;font-weight:800;margin-bottom:3px">India's Startup Revolution</div><div class="text-xs text-dim">Business</div></div></div>
+          <div class="card" style="cursor:pointer" data-topic="Climate change responsibility" onclick="selectGDTopic(this)"><div class="card-bd text-center"><div style="font-size:26px;margin-bottom:8px">🌍</div><div style="font-size:13px;font-weight:800;margin-bottom:3px">Climate Action</div><div class="text-xs text-dim">Environment</div></div></div>
+          <div class="card" style="cursor:pointer" data-topic="Online vs traditional education" onclick="selectGDTopic(this)"><div class="card-bd text-center"><div style="font-size:26px;margin-bottom:8px">📚</div><div style="font-size:13px;font-weight:800;margin-bottom:3px">Online vs Traditional Education</div><div class="text-xs text-dim">Education</div></div></div>
+        </div>
+        <div class="g2 mb-20">
+          <div class="form-group" style="margin:0"><label class="form-label">PARTICIPANTS</label><div class="input-wrap"><span class="input-icon">👥</span><select id="gd-parts" style="padding-left:44px"><option value="3">3 (Easy)</option><option value="4" selected>4 (Medium)</option><option value="5">5 (Hard)</option></select></div></div>
+          <div class="form-group" style="margin:0"><label class="form-label">DURATION</label><div class="input-wrap"><span class="input-icon">⏱</span><select id="gd-dur" style="padding-left:44px"><option value="300">5 minutes</option><option value="600" selected>10 minutes</option><option value="900">15 minutes</option></select></div></div>
+        </div>
+        <button class="btn btn-teal btn-lg" onclick="launchGD()">🎤 Launch Voice GD Session</button>
+      </div>
+
+      <!-- GD VOICE SESSION -->
+      <div id="gd-session" class="hidden">
+        <!-- Header bar -->
+        <div class="flex-between mb-16">
+          <div>
+            <div class="text-xs text-dim mb-4" style="font-weight:800;text-transform:uppercase;letter-spacing:1px">Current Topic</div>
+            <div style="font-family:var(--font-h);font-size:16px;font-weight:800" id="gd-topic-display">—</div>
+          </div>
+          <div class="flex gap-10" style="align-items:center">
+            <div class="badge badge-green"><span class="dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:4px;animation:pulse 1.5s infinite"></span>Live</div>
+            <div class="timer-disp" id="gdTimer">10:00</div>
+            <button class="btn btn-danger btn-sm" onclick="endGD()">End Session</button>
+          </div>
+        </div>
+
+        <div class="gd-layout">
+          <!-- Participants panel -->
+          <div class="parts-panel">
+            <div class="text-xs text-dim mb-12" style="text-transform:uppercase;letter-spacing:1px;font-weight:800">Participants</div>
+            <div id="partList"></div>
+            <!-- Status indicator -->
+            <div id="gdStatusBox" style="margin-top:16px;padding:10px 12px;border-radius:var(--r);font-size:12px;font-weight:700;text-align:center;background:var(--surface2);color:var(--text-3);border:1px solid var(--border)">
+              Waiting to start…
+            </div>
+          </div>
+
+          <!-- Chat panel -->
+          <div class="chat-panel">
+            <div class="chat-msgs" id="gdMsgs"></div>
+            <div class="typing-row" id="typingRow">
+              <span class="text-dim" id="typingName">Priya is speaking</span>
+              <div class="typing-dots"><div class="tdot"></div><div class="tdot"></div><div class="tdot"></div></div>
+            </div>
+
+            <!-- Voice input area -->
+            <div class="chat-input-area" style="padding:14px">
+              <!-- Live transcript display -->
+              <div id="gdLiveTranscript" style="min-height:48px;padding:10px 14px;background:var(--surface2);border:2px dashed var(--border);border-radius:var(--r);margin-bottom:10px;font-size:13px;color:var(--text-3);font-style:italic;transition:all 0.3s;display:flex;align-items:center;gap:8px">
+                <span id="gdTranscriptDot" style="width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background 0.3s"></span>
+                <span id="gdTranscriptText">Press the mic button and speak your point…</span>
+              </div>
+
+              <!-- Mic button row -->
+              <div style="display:flex;gap:10px;align-items:center;justify-content:center">
+                <button id="gdMicBtn" onclick="toggleMic()" style="width:72px;height:72px;border-radius:50%;border:none;background:var(--teal);color:#fff;font-size:28px;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 20px rgba(10,181,160,0.4);flex-shrink:0;position:relative" title="Hold to speak">
+                  🎙️
+                  <div id="micRipple" style="display:none;position:absolute;inset:-4px;border-radius:50%;border:3px solid var(--teal);animation:micpulse 1s infinite"></div>
+                </button>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:2px" id="gdMicLabel">Tap mic to speak</div>
+                  <div style="font-size:11px;color:var(--text-3)" id="gdMicSub">Your speech will be converted to text and sent</div>
+                  <!-- Volume meter -->
+                  <div id="gdVolBar" style="height:4px;border-radius:2px;background:var(--border);margin-top:6px;overflow:hidden">
+                    <div id="gdVolFill" style="height:100%;width:0%;background:var(--teal);transition:width 0.1s;border-radius:2px"></div>
+                  </div>
+                </div>
+                <button id="gdSendBtn" onclick="gdSendTranscript()" style="padding:10px 18px;border-radius:var(--r);border:none;background:var(--indigo);color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.2s;display:none">
+                  Send ➤
+                </button>
+              </div>
+
+              <!-- Quick phrase chips -->
+              <div id="gdChips" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px"></div>
+            </div>
+          </div>
+
+          <!-- Live score panel -->
+          <div class="score-live-panel">
+            <div class="text-xs text-dim" style="text-transform:uppercase;letter-spacing:1px;font-weight:800">Live Score</div>
+            <div class="live-score-big"><div class="live-score-num" id="gdScoreNum">—</div><div class="live-score-lbl">/ 100 points</div></div>
+            <div>
+              <div class="prog-wrap"><div class="prog-hd"><span class="prog-label">Communication</span><span class="prog-val" id="gm1v">—</span></div><div class="prog-bar"><div class="prog-fill" id="gm1" style="width:0%;background:var(--teal)"></div></div></div>
+              <div class="prog-wrap"><div class="prog-hd"><span class="prog-label">Reasoning</span><span class="prog-val" id="gm2v">—</span></div><div class="prog-bar"><div class="prog-fill" id="gm2" style="width:0%;background:var(--indigo)"></div></div></div>
+              <div class="prog-wrap"><div class="prog-hd"><span class="prog-label">Confidence</span><span class="prog-val" id="gm3v">—</span></div><div class="prog-bar"><div class="prog-fill" id="gm3" style="width:0%;background:var(--violet)"></div></div></div>
+              <div class="prog-wrap"><div class="prog-hd"><span class="prog-label">Leadership</span><span class="prog-val" id="gm4v">—</span></div><div class="prog-bar"><div class="prog-fill" id="gm4" style="width:0%;background:var(--amber)"></div></div></div>
+              <div class="prog-wrap" style="margin-bottom:0"><div class="prog-hd"><span class="prog-label">Participation</span><span class="prog-val" id="gm5v">—</span></div><div class="prog-bar"><div class="prog-fill" id="gm5" style="width:0%;background:var(--green)"></div></div></div>
+            </div>
+            <div class="tip-box"><div class="tip-title">💡 Live Tip</div><div class="tip-text" id="gdTip">Start by stating your position clearly.</div></div>
+            <!-- Voice settings -->
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+              <div class="text-xs text-dim mb-8" style="font-weight:800;text-transform:uppercase;letter-spacing:1px">AI Voice</div>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text-2)">
+                <input type="checkbox" id="gdVoiceToggle" checked style="accent-color:var(--teal)">
+                Speak AI responses aloud
+              </label>
+              <div style="margin-top:8px;font-size:11px;color:var(--text-3)">Speed: <input type="range" id="gdSpeechRate" min="0.7" max="1.5" step="0.1" value="1.0" style="width:80px;accent-color:var(--teal);vertical-align:middle"> <span id="gdSpeechRateVal">1.0x</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GD RESULTS -->
+      <div id="gd-results" class="hidden">
+        <div class="result-hero"><span class="result-emoji" id="gdResultEmoji">🎤</span><div class="result-title" id="gdResultTitle">GD Session Complete!</div><div class="result-sub" id="gdResultSub"></div></div>
+        <div class="g4 mb-20" style="grid-template-columns:repeat(5,1fr)">
+          <div class="stat-card sc-teal"><span class="stat-icon">🗣</span><div class="stat-val text-teal" id="gr1">—</div><div class="stat-label">Communication</div></div>
+          <div class="stat-card sc-indigo"><span class="stat-icon">🔍</span><div class="stat-val text-indigo" id="gr2">—</div><div class="stat-label">Reasoning</div></div>
+          <div class="stat-card sc-violet"><span class="stat-icon">💪</span><div class="stat-val text-violet" id="gr3">—</div><div class="stat-label">Confidence</div></div>
+          <div class="stat-card sc-amber"><span class="stat-icon">👑</span><div class="stat-val text-amber" id="gr4">—</div><div class="stat-label">Leadership</div></div>
+          <div class="stat-card sc-green"><span class="stat-icon">🎯</span><div class="stat-val text-green" id="gr5">—</div><div class="stat-label">Overall</div></div>
+        </div>
+        <!-- Transcript review -->
+        <div class="card mb-16">
+          <div class="card-hd"><div class="card-title">💬 Your Contributions</div><div class="card-sub-t" id="gdContribCount">—</div></div>
+          <div class="card-bd" id="gdTranscriptReview" style="max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+        <div class="card mb-20"><div class="card-hd"><div class="card-title">📋 Evaluator Feedback</div></div><div class="card-bd fb-list" id="gdFeedback"></div></div>
+        <div class="flex gap-10">
+          <button class="btn btn-primary" onclick="goTo('interview')">Next: AI Interview →</button>
+          <button class="btn btn-ghost" onclick="resetGD()">🔄 New GD Session</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INTERVIEW PAGE -->
+    <div class="page" id="page-interview">
+      <div id="iv-intro">
+        <div class="page-head">
+          <div class="eyebrow badge-amber">🤖 Module 4</div>
+          <h1 class="page-title">AI <span class="text-amber">Mock Interview</span></h1>
+          <p class="page-sub">Face a realistic AI interviewer and get scored on every answer with detailed feedback</p>
+        </div>
+        <div class="g2 mb-20" style="max-width:700px">
+          <div class="form-group" style="margin:0"><label class="form-label">JOB ROLE</label><div class="input-wrap"><span class="input-icon">💼</span><select id="iv-role" style="padding-left:44px"><option>Software Engineer</option><option>Data Analyst</option><option>Product Manager</option><option>Frontend Developer</option><option>ML Engineer</option></select></div></div>
+          <div class="form-group" style="margin:0"><label class="form-label">INTERVIEW TYPE</label><div class="input-wrap"><span class="input-icon">🎯</span><select id="iv-type" style="padding-left:44px"><option>Technical</option><option>HR / Behavioural</option><option>Mixed</option></select></div></div>
+          <div class="form-group" style="margin:0"><label class="form-label">EXPERIENCE LEVEL</label><div class="input-wrap"><span class="input-icon">📈</span><select id="iv-exp" style="padding-left:44px"><option>Fresher (0–1 yr)</option><option>Junior (1–3 yrs)</option><option>Mid (3–6 yrs)</option></select></div></div>
+          <div class="form-group" style="margin:0"><label class="form-label">QUESTIONS</label><div class="input-wrap"><span class="input-icon">❓</span><select id="iv-qs" style="padding-left:44px"><option value="5">5 (Quick)</option><option value="8" selected>8 (Standard)</option><option value="12">12 (Full)</option></select></div></div>
+        </div>
+        <div class="mb-20">
+          <div class="text-xs text-dim mb-12" style="text-transform:uppercase;letter-spacing:1px;font-weight:800">Choose Interviewer</div>
+          <div class="g3" style="max-width:560px">
+            <div class="card selected-iv" style="cursor:pointer;text-align:center;border-color:rgba(247,147,30,0.4);background:var(--amber-pale)" onclick="pickIV(this,'Arav S.','Senior Engineer','🧑‍💻','Friendly')"><div class="card-bd"><div style="font-size:32px;margin-bottom:8px">🧑‍💻</div><div style="font-size:13px;font-weight:800;margin-bottom:3px">Arav S.</div><div class="badge badge-green">Friendly</div></div></div>
+            <div class="card" style="cursor:pointer;text-align:center" onclick="pickIV(this,'Meera P.','HR Manager','👩‍💼','Professional')"><div class="card-bd"><div style="font-size:32px;margin-bottom:8px">👩‍💼</div><div style="font-size:13px;font-weight:800;margin-bottom:3px">Meera P.</div><div class="badge badge-violet">HR Pro</div></div></div>
+            <div class="card" style="cursor:pointer;text-align:center" onclick="pickIV(this,'Vikram N.','Tech Lead','👨‍🔬','Challenging')"><div class="card-bd"><div style="font-size:32px;margin-bottom:8px">👨‍🔬</div><div style="font-size:13px;font-weight:800;margin-bottom:3px">Vikram N.</div><div class="badge badge-rose">Tough</div></div></div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="startInterview()">🤖 Start Interview Session</button>
+      </div>
+      <div id="iv-session" class="hidden">
+        <div class="flex-between mb-16">
+          <div>
+            <div class="text-xs text-dim mb-4" style="font-weight:800;text-transform:uppercase;letter-spacing:1px">Interview in Progress</div>
+            <div style="font-family:var(--font-h);font-size:16px;font-weight:800" id="iv-session-label">—</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-2);cursor:pointer">
+              <input type="checkbox" id="ivVoiceToggle" checked style="accent-color:var(--amber)"> AI speaks
+            </label>
+            <div style="font-size:11px;color:var(--text-3)">Speed: <input type="range" id="ivSpeechRate" min="0.7" max="1.4" step="0.1" value="0.95" style="width:60px;accent-color:var(--amber);vertical-align:middle"> <span id="ivSpeechRateVal">0.95x</span></div>
+            <button class="btn btn-danger btn-sm" onclick="endInterview()">End Interview</button>
+          </div>
+        </div>
+
+        <div class="iv-layout">
+          <!-- Left panel: interviewer info + scores -->
+          <div class="iv-info-panel">
+            <!-- Interviewer avatar with speaking ring -->
+            <div class="iv-avatar" id="ivAvatarEl" style="position:relative">
+              🧑‍💻
+              <div id="ivSpeakRing" style="display:none;position:absolute;inset:-6px;border-radius:50%;border:3px solid var(--amber);animation:micpulse 0.9s infinite"></div>
+            </div>
+            <div class="iv-interviewer-name" id="ivNameEl">Arav S.</div>
+            <div class="iv-interviewer-role" id="ivRoleEl">Senior Engineer · Friendly</div>
+
+            <!-- AI status indicator -->
+            <div id="ivAiStatus" style="margin:8px 0;padding:7px 12px;border-radius:var(--r);font-size:11px;font-weight:700;text-align:center;background:var(--surface2);color:var(--text-3);border:1px solid var(--border);transition:all 0.3s">
+              Waiting to start…
+            </div>
+
+            <!-- Progress -->
+            <div class="iv-prog-wrap">
+              <div class="iv-prog-hd"><span>Progress</span><span id="ivProgLabel">0/8</span></div>
+              <div class="prog-bar" style="height:5px"><div class="prog-fill" id="ivProgFill" style="width:0%;background:linear-gradient(90deg,var(--amber),var(--rose))"></div></div>
+            </div>
+
+            <!-- Live metrics -->
+            <div style="width:100%;margin-bottom:16px">
+              <div class="perf-row"><div class="perf-hd"><span>Clarity</span><span id="pe1v">—</span></div><div class="perf-bar-bg"><div class="perf-fill" id="pe1" style="width:0%;background:var(--teal)"></div></div></div>
+              <div class="perf-row"><div class="perf-hd"><span>Relevance</span><span id="pe2v">—</span></div><div class="perf-bar-bg"><div class="perf-fill" id="pe2" style="width:0%;background:var(--indigo)"></div></div></div>
+              <div class="perf-row"><div class="perf-hd"><span>Confidence</span><span id="pe3v">—</span></div><div class="perf-bar-bg"><div class="perf-fill" id="pe3" style="width:0%;background:var(--violet)"></div></div></div>
+              <div class="perf-row"><div class="perf-hd"><span>Depth</span><span id="pe4v">—</span></div><div class="perf-bar-bg"><div class="perf-fill" id="pe4" style="width:0%;background:var(--amber)"></div></div></div>
+            </div>
+            <div class="q-dots-row" id="ivQDots"></div>
+          </div>
+
+          <!-- Right panel: chat + voice input -->
+          <div class="iv-chat">
+            <div class="iv-chat-hd">
+              <div style="font-family:var(--font-h);font-size:13px;font-weight:800">Interview Session</div>
+              <div class="iv-sess-timer" id="ivSessTimer">00:00</div>
+            </div>
+
+            <!-- Chat messages -->
+            <div class="iv-msgs" id="ivMsgs"></div>
+
+            <!-- Voice input area -->
+            <div class="iv-input-area" style="padding:14px;border-top:1px solid var(--border)">
+              <!-- Hint bar -->
+              <div class="hint-bar" id="ivHint" style="margin-bottom:10px">💡 Use the STAR method: Situation, Task, Action, Result for behavioural questions.</div>
+
+              <!-- Live transcript -->
+              <div id="ivLiveTranscript" style="min-height:52px;padding:10px 14px;background:var(--surface2);border:2px dashed var(--border);border-radius:var(--r);margin-bottom:10px;font-size:13px;color:var(--text-3);font-style:italic;display:flex;align-items:flex-start;gap:8px;transition:border-color 0.3s">
+                <span id="ivTranscriptDot" style="width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;margin-top:4px;transition:background 0.3s"></span>
+                <span id="ivTranscriptText">Tap the mic button below and speak your answer clearly…</span>
+              </div>
+
+              <!-- Mic + controls row -->
+              <div style="display:flex;gap:10px;align-items:center">
+                <button id="ivMicBtn" onclick="ivToggleMic()" style="width:68px;height:68px;border-radius:50%;border:none;background:var(--amber);color:#fff;font-size:13px;font-weight:800;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 20px rgba(247,147,30,0.4);flex-shrink:0;position:relative" title="Tap to speak">
+                  SPEAK
+                  <div id="ivMicRipple" style="display:none;position:absolute;inset:-5px;border-radius:50%;border:3px solid var(--amber);animation:micpulse 1s infinite;pointer-events:none"></div>
+                </button>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:2px" id="ivMicLabel">Tap mic to answer</div>
+                  <div style="font-size:11px;color:var(--text-3)" id="ivMicSub">Speak clearly — your answer will appear above</div>
+                  <div id="ivVolBar" style="height:4px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden">
+                    <div id="ivVolFill" style="height:100%;width:0%;background:var(--amber);transition:width 0.1s;border-radius:2px"></div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <button id="ivSendBtn" onclick="ivSubmitVoice()" style="padding:10px 16px;border-radius:var(--r);border:none;background:var(--indigo);color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:none">Submit ↵</button>
+                  <button onclick="ivSkip()" style="padding:8px 16px;border-radius:var(--r);border:1.5px solid var(--border);background:transparent;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer">Skip →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="iv-results" class="hidden">
+        <div class="result-hero"><span class="result-emoji" id="ivResultEmoji">🎯</span><div class="result-title" id="ivResultTitle">Interview Complete!</div><div class="result-sub" id="ivResultSub"></div></div>
+        <div class="g4 mb-20">
+          <div class="stat-card sc-teal"><span class="stat-icon">💬</span><div class="stat-val text-teal" id="ivsc1">—</div><div class="stat-label">Clarity</div></div>
+          <div class="stat-card sc-indigo"><span class="stat-icon">🎯</span><div class="stat-val text-indigo" id="ivsc2">—</div><div class="stat-label">Relevance</div></div>
+          <div class="stat-card sc-violet"><span class="stat-icon">💪</span><div class="stat-val text-violet" id="ivsc3">—</div><div class="stat-label">Confidence</div></div>
+          <div class="stat-card sc-amber"><span class="stat-icon">⭐</span><div class="stat-val text-amber" id="ivsc4">—</div><div class="stat-label">Overall</div></div>
+        </div>
+        <!-- Detailed Q&A review -->
+        <div class="card mb-16">
+          <div class="card-hd"><div class="card-title">📝 Detailed Q&amp;A Review</div><div class="card-sub-t" id="ivReviewSub">—</div></div>
+          <div class="card-bd" id="ivQAList"></div>
+        </div>
+        <!-- Overall AI feedback -->
+        <div class="card mb-20">
+          <div class="card-hd"><div class="card-title">🤖 AI Interviewer Feedback</div></div>
+          <div class="card-bd fb-list" id="ivOverallFeedback"></div>
+        </div>
+        <div class="flex gap-10">
+          <button class="btn btn-primary" onclick="goTo('dashboard')">View Career Report →</button>
+          <button class="btn btn-ghost" onclick="resetInterview()">🔄 New Interview</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         HISTORY PAGE
+    ═══════════════════════════════════════════════ -->
+    <div class="page" id="page-history">
+      <div class="page-head">
+        <div class="eyebrow badge-indigo">🕐 All Sessions</div>
+        <h1 class="page-title">Session <span class="text-indigo">History</span></h1>
+        <p class="page-sub">Every practice session you have completed — track your improvement, replay any attempt, and see your score trends over time.</p>
+      </div>
+
+      <!-- Summary stats bar -->
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px" id="histSummaryBar">
+        <div class="stat-card sc-indigo"><span class="stat-icon">📋</span><div class="stat-val text-indigo" id="hist-total">0</div><div class="stat-label">Total Sessions</div></div>
+        <div class="stat-card sc-violet"><span class="stat-icon">📄</span><div class="stat-val text-violet" id="hist-resume-best">—</div><div class="stat-label">Best Resume</div></div>
+        <div class="stat-card sc-teal"><span class="stat-icon">🧠</span><div class="stat-val text-teal" id="hist-apt-best">—</div><div class="stat-label">Best Aptitude</div></div>
+        <div class="stat-card sc-amber"><span class="stat-icon">🎤</span><div class="stat-val text-amber" id="hist-gd-best">—</div><div class="stat-label">Best GD</div></div>
+        <div class="stat-card sc-green"><span class="stat-icon">🤖</span><div class="stat-val text-green" id="hist-iv-best">—</div><div class="stat-label">Best Interview</div></div>
+      </div>
+
+      <!-- Score trend chart -->
+      <div class="card mb-20" id="histTrendCard" style="display:none">
+        <div class="card-hd">
+          <div class="card-title">📈 Score Trend — Your Improvement Over Time</div>
+          <div class="card-sub-t">Each point is a completed session attempt</div>
+        </div>
+        <div class="card-bd">
+          <canvas id="histTrendChart" height="120"></canvas>
+        </div>
+      </div>
+
+      <!-- Filter tabs -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="histFilterRow">
+        <button class="tips-pill active" onclick="filterHistory('all',this)">📋 All</button>
+        <button class="tips-pill" onclick="filterHistory('resume',this)">📄 Resume</button>
+        <button class="tips-pill" onclick="filterHistory('aptitude',this)">🧠 Aptitude</button>
+        <button class="tips-pill" onclick="filterHistory('technical',this)">💻 Technical</button>
+        <button class="tips-pill" onclick="filterHistory('gd',this)">🎤 GD</button>
+        <button class="tips-pill" onclick="filterHistory('interview',this)">🤖 Interview</button>
+        <button class="tips-pill" onclick="filterHistory('full',this)">🏆 Full Runs</button>
+        <button style="margin-left:auto;padding:7px 16px;border-radius:100px;border:1.5px solid var(--rose);background:transparent;color:var(--rose);font-size:12px;font-weight:700;cursor:pointer" onclick="clearAllHistory()">🗑 Clear All</button>
+      </div>
+
+      <!-- History list -->
+      <div id="histList">
+        <div id="histEmpty" style="text-align:center;padding:60px 20px;color:var(--text-3)">
+          <div style="font-size:52px;margin-bottom:16px">🕐</div>
+          <div style="font-family:var(--font-h);font-size:20px;font-weight:800;margin-bottom:8px">No sessions yet</div>
+          <div style="font-size:14px;line-height:1.6;max-width:360px;margin:0 auto">Complete any module — Resume Analyzer, Aptitude Test, GD Simulation, or AI Interview — and your results will appear here automatically.</div>
+          <button class="btn btn-primary" style="margin-top:20px" onclick="goTo('resume')">Start with Resume →</button>
+        </div>
+        <div id="histCards" style="display:flex;flex-direction:column;gap:12px"></div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD PAGE -->
+    <div class="page" id="page-dashboard">
+      <div class="page-head">
+        <div class="eyebrow badge-indigo">🎯 Career Report</div>
+        <h1 class="page-title">Career Readiness <span class="text-indigo">Dashboard</span></h1>
+        <p class="page-sub">Your complete performance summary across all four modules</p>
+      </div>
+      <div class="dash-hero mb-20">
+        <div class="ring-wrap" style="width:160px;height:160px;margin:0">
+          <svg viewBox="0 0 160 160" width="160" height="160">
+            <circle class="ring-bg-c" cx="80" cy="80" r="67" stroke="rgba(255,255,255,0.2)"/>
+            <circle class="ring-fg" id="dashRing" cx="80" cy="80" r="67" stroke="url(#dGrad)"/>
+            <defs><linearGradient id="dGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#fff"/><stop offset="50%" stop-color="#bfdbfe"/><stop offset="100%" stop-color="#c4b5fd"/></linearGradient></defs>
+          </svg>
+          <div class="ring-center"><div class="ring-num" id="dashScore" style="color:#fff">0<span class="ring-unit" style="font-size:18px;color:rgba(255,255,255,0.7)">%</span></div></div>
+        </div>
+        <div class="dash-hero-info">
+          <div class="dash-hero-label">Career Readiness Score</div>
+          <div class="dash-hero-grade" id="dashGrade">—</div>
+          <div class="dash-hero-desc" id="dashDesc">Complete all modules to get your full career readiness report.</div>
+          <div class="dash-hero-actions">
+            <button class="btn btn-white btn-lg" onclick="goTo('home')">🏠 Back to Home</button>
+            <button class="btn btn-white-ghost btn-lg btn-pdf" onclick="exportPDF()">⬇ Export PDF Report</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="g4 mb-20" id="dashStats"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:20px;margin-bottom:20px">
+        <div>
+          <div class="card mb-16"><div class="card-hd"><div class="card-title">📊 Module Scores</div></div><div class="card-bd" id="dashModules"></div></div>
+          <div class="card"><div class="card-hd"><div class="card-title">🕸 Skill Radar</div></div><div class="card-bd flex-center"><canvas id="radarChart" width="280" height="280"></canvas></div></div>
+        </div>
+        <div>
+          <div class="card mb-16"><div class="card-hd"><div class="card-title">💡 AI Recommendations</div></div><div class="card-bd" id="dashRecos"></div></div>
+        </div>
+      </div>
+
+      <div class="g2 mb-4">
+        <div class="card"><div class="card-hd"><div class="card-title">📅 Activity Timeline</div></div><div class="card-bd"><div class="tl" id="dashTimeline"></div></div></div>
+        <div class="card"><div class="card-hd"><div class="card-title">🔧 Skill Gap Map</div></div><div class="card-bd"><div class="gap-wrap" id="dashGaps"></div></div></div>
+      </div>
+
+      <div class="cert-banner">
+        <div class="cert-left"><div class="cert-emoji">🏅</div><div><div class="cert-title">Career Readiness Certificate</div><div class="cert-sub">Complete all 5 modules with ≥70% average to earn your certificate</div></div></div>
+        <div class="cert-actions"><button class="btn btn-ghost btn-sm" id="certBtn" onclick="showToast('Complete all modules to unlock!','info')">🔒 Locked</button></div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         INTERVIEW TIPS PAGE
+    ═══════════════════════════════════════════════ -->
+    <div class="page" id="page-tips">
+      <div class="page-head">
+        <div class="eyebrow badge-teal">📚 Resources</div>
+        <h1 class="page-title">Interview <span class="text-teal">Tips & Strategies</span></h1>
+        <p class="page-sub">Master every round of placement with expert guidance — resume writing, aptitude shortcuts, technical patterns, GD strategies, HR answers and salary negotiation.</p>
+      </div>
+
+      <!-- Filter Pills -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px" id="tipsCatPills">
+        <button class="tips-pill active" onclick="filterTips('all',this)">🌟 All Tips</button>
+        <button class="tips-pill" onclick="filterTips('resume',this)">📄 Resume</button>
+        <button class="tips-pill" onclick="filterTips('aptitude',this)">🧠 Aptitude</button>
+        <button class="tips-pill" onclick="filterTips('technical',this)">💻 Technical</button>
+        <button class="tips-pill" onclick="filterTips('hr',this)">🤝 HR / Behavioral</button>
+        <button class="tips-pill" onclick="filterTips('gd',this)">🎤 Group Discussion</button>
+        <button class="tips-pill" onclick="filterTips('offer',this)">💰 Offer & Negotiation</button>
+      </div>
+
+      <!-- STAR Method Banner -->
+      <div class="tips-star-banner" id="starBanner">
+        <div class="tips-star-title">⭐ The STAR Method — Answer Any Behavioral Question</div>
+        <div class="tips-star-grid">
+          <div class="tips-star-item"><div class="tips-star-letter">S</div><div class="tips-star-name">Situation</div><div class="tips-star-desc">Set the scene — where, when, what was the context?</div></div>
+          <div class="tips-star-item"><div class="tips-star-letter">T</div><div class="tips-star-name">Task</div><div class="tips-star-desc">What was your specific responsibility or challenge?</div></div>
+          <div class="tips-star-item"><div class="tips-star-letter">A</div><div class="tips-star-name">Action</div><div class="tips-star-desc">Steps YOU took. Use "I did…" not "We did…"</div></div>
+          <div class="tips-star-item"><div class="tips-star-letter">R</div><div class="tips-star-name">Result</div><div class="tips-star-desc">Outcome + metrics: "Reduced load time 40%", "Won hackathon"</div></div>
+        </div>
+      </div>
+
+      <!-- Tips Sections -->
+      <div class="tips-section" id="ts-resume">
+        <div class="tips-sec-hd"><span>📄</span><span>Resume Writing — 8 Expert Tips</span></div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">01</span><span class="tip-card-title">Use ATS-friendly formatting — 75% of resumes are filtered before a human reads them</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <p>Most large companies use Applicant Tracking Systems (ATS). Standard headers, single-column layouts, and no graphics/tables are essential.</p>
+            <div class="tip-checks">
+              <div class="tip-check">✅ Section headings: "Experience", "Education", "Skills" — not creative names</div>
+              <div class="tip-check">✅ Submit as PDF unless explicitly asked for Word</div>
+              <div class="tip-check">✅ Font 10–12pt (Calibri, Arial, Times New Roman)</div>
+              <div class="tip-check">❌ Avoid photos, colors, graphics, columns, fancy icons</div>
+              <div class="tip-check">❌ Avoid text boxes and headers/footers — ATS can't parse them</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">02</span><span class="tip-card-title">Write bullet points with: Strong Verb + What You Did + Quantified Result</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-compare">
+              <div class="tip-bad">❌ "Was responsible for improving website performance"</div>
+              <div class="tip-good">✅ "Engineered lazy-loading that cut page load by 42%, lifting Core Web Vitals from 68 → 94"</div>
+            </div>
+            <div class="tip-checks">
+              <div class="tip-check">🔥 Top verbs: Engineered, Architected, Scaled, Optimised, Led, Reduced, Automated, Deployed</div>
+              <div class="tip-check">📊 Always quantify: %, $, users, time saved, team size</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">03</span><span class="tip-card-title">Tailor your resume to every job description — match keywords exactly</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">✅ Mirror exact tech names: "React.js" not "ReactJS" if that's what the JD says</div>
+              <div class="tip-check">✅ Put the most relevant experience first</div>
+              <div class="tip-check">✅ Paste JD into a word cloud to find most-repeated keywords</div>
+              <div class="tip-check">📌 Generic resumes get 6× fewer callbacks than tailored ones</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">04</span><span class="tip-card-title">Write a sharp 2-line professional summary (not a generic objective)</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-compare">
+              <div class="tip-bad">❌ "Seeking a challenging role in a reputed organisation where I can utilise my skills"</div>
+              <div class="tip-good">✅ "CS graduate with Python + React expertise, 2 internships, 3 deployed projects. Passionate about scalable backend systems — seeking SWE role."</div>
+            </div>
+            <p style="margin-top:8px">Formula: <strong>Who you are → Top skills → Value you bring → What you want</strong></p>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">05</span><span class="tip-card-title">Projects are your secret weapon as a fresher — format them right</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">✅ Name [Tech Stack]: <em>E-Commerce Platform [React, Node.js, MongoDB, AWS S3]</em></div>
+              <div class="tip-check">✅ What problem it solves and who uses it</div>
+              <div class="tip-check">✅ Scale/impact: "handles 500+ concurrent users", "95% test coverage"</div>
+              <div class="tip-check">✅ GitHub link + live demo link (both must work!)</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">06</span><span class="tip-card-title">Skills section — organise by category, never add proficiency bars</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">✅ Organise: Languages | Frameworks | Databases | Cloud/DevOps | Tools</div>
+              <div class="tip-check">✅ Only list skills you can discuss in an interview</div>
+              <div class="tip-check">❌ No skill bars/ratings — ATS can't parse them and they look amateur</div>
+              <div class="tip-check">❌ Don't list MS Word, Google Docs — expected, not a skill</div>
+              <div class="tip-check">📌 2025 must-haves: DSA, System Design, Git, Docker, 1 Cloud platform</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">07</span><span class="tip-card-title">Page length rule: 1 page for 0–3 yrs, 2 pages for 3–7 yrs, 3 max after that</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">📄 Fresher: strictly 1 page — ruthlessly cut hobbies, high school, irrelevant coursework</div>
+              <div class="tip-check">📄 3–7 years: 1–2 pages acceptable</div>
+              <div class="tip-check">📄 7+ / Senior: 2–3 pages fine</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">08</span><span class="tip-card-title">Pre-submission checklist — do this before every application</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">✅ Spell-check with Grammarly</div>
+              <div class="tip-check">✅ File name: FirstName_LastName_Resume.pdf</div>
+              <div class="tip-check">✅ ATS test on Jobscan or Resume Worded</div>
+              <div class="tip-check">✅ All links work (GitHub, LinkedIn, portfolio)</div>
+              <div class="tip-check">✅ No DOB, religion, caste, photo (unless country requires it)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- APTITUDE -->
+      <div class="tips-section" id="ts-aptitude">
+        <div class="tips-sec-hd"><span>🧠</span><span>Aptitude Test Strategies — 4 Key Tips</span></div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">01</span><span class="tip-card-title">Time management — never spend more than 90 seconds on one question</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">⏱ Budget ~75 sec per question for 20-question tests</div>
+              <div class="tip-check">✅ First pass: answer all easy questions immediately</div>
+              <div class="tip-check">✅ Mark difficult ones and return in second pass</div>
+              <div class="tip-check">📌 Negative marking: only guess if you can eliminate 2+ options</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">02</span><span class="tip-card-title">Mental math shortcuts that save 30+ seconds per question</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">🧮 √2=1.41, √3=1.73, √5=2.24, π≈3.14 — memorise these</div>
+              <div class="tip-check">🧮 % flip trick: 17% of 50 = 50% of 17 = 8.5 (flip when easier)</div>
+              <div class="tip-check">🧮 Compound interest (2 yr): r + r + r²/100</div>
+              <div class="tip-check">🧮 Ratio: A:B=3:5 → A=3n, B=5n, Total=8n</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">03</span><span class="tip-card-title">Logical reasoning — use elimination + paper diagrams, never solve mentally</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">✅ Syllogisms: draw Venn diagrams on rough paper — never do it in your head</div>
+              <div class="tip-check">✅ Blood relations: draw a family tree immediately</div>
+              <div class="tip-check">✅ Series: check 1st-level differences, then 2nd-level, then squares/cubes</div>
+              <div class="tip-check">✅ Coding: verify pattern with ALL given letters before choosing answer</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">04</span><span class="tip-card-title">Best resources to practice aptitude for placements</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">📚 Books: RS Aggarwal Quantitative Aptitude, Verbal &amp; Non-Verbal Reasoning</div>
+              <div class="tip-check">🌐 Websites: IndiaBIX, PrepInsta, TestBook, GeeksForGeeks Aptitude</div>
+              <div class="tip-check">🎯 Search "[Company Name] placement papers" for past patterns</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TECHNICAL -->
+      <div class="tips-section" id="ts-technical">
+        <div class="tips-sec-hd"><span>💻</span><span>Technical Interview — 6 Must-Know Strategies</span></div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">01</span><span class="tip-card-title">Think out loud — interviewers score your process, not just the answer</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">✅ "I'm thinking about using a hash map here because lookups are O(1)…"</div>
+              <div class="tip-check">✅ Clarify before coding: "Should I handle negatives? What's the max size?"</div>
+              <div class="tip-check">✅ Explain trade-offs: "This is O(n²) but simpler; I can optimise to O(n log n)"</div>
+              <div class="tip-check">✅ Write pseudocode first, then code</div>
+              <div class="tip-check">❌ Never sit silently for more than 60 seconds</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">02</span><span class="tip-card-title">10 DSA patterns that cover 80% of coding interview questions</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-patterns-grid">
+              <div class="tip-pattern-item">🪟 Sliding Window</div>
+              <div class="tip-pattern-item">👉 Two Pointers</div>
+              <div class="tip-pattern-item">🗺 Hash Map / Set</div>
+              <div class="tip-pattern-item">📚 Stack / Queue</div>
+              <div class="tip-pattern-item">🔍 Binary Search</div>
+              <div class="tip-pattern-item">🌲 Tree DFS / BFS</div>
+              <div class="tip-pattern-item">📐 Dynamic Programming</div>
+              <div class="tip-pattern-item">🔗 Linked List</div>
+              <div class="tip-pattern-item">🔢 Sorting & Searching</div>
+              <div class="tip-pattern-item">📊 Greedy Algorithms</div>
+            </div>
+            <p style="margin-top:10px;font-size:12px;color:var(--text-3)">Practice 3–5 problems per pattern on LeetCode. Easy → Medium → Hard.</p>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">03</span><span class="tip-card-title">System Design framework — impress even as a fresher</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check"><strong>1. Clarify requirements</strong> — functional (what it does) + non-functional (scale, latency)</div>
+              <div class="tip-check"><strong>2. Estimate scale</strong> — daily users, req/sec, storage needs</div>
+              <div class="tip-check"><strong>3. High-level design</strong> — client → load balancer → servers → DB → cache</div>
+              <div class="tip-check"><strong>4. Deep dive</strong> — pick 1–2 components to explain in detail</div>
+              <div class="tip-check"><strong>5. Trade-offs</strong> — SQL vs NoSQL, consistency vs availability (CAP theorem)</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">04</span><span class="tip-card-title">What to do when you're stuck — never freeze or go silent</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">✅ "Let me think for a moment…" — silence up to 60 sec is fine</div>
+              <div class="tip-check">✅ "Can I start with brute force and optimise?" — always yes</div>
+              <div class="tip-check">✅ Work a concrete example: "If input is [1,2,3], then…"</div>
+              <div class="tip-check">✅ Ask for a nudge: "I'm thinking about trees — am I on the right track?"</div>
+              <div class="tip-check">❌ Don't say "I don't know" and go silent</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">05</span><span class="tip-card-title">Always test your own code — dry-run before saying "done"</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">✅ Dry-run with given examples first</div>
+              <div class="tip-check">✅ Edge cases: empty input, single element, duplicates, negatives, zero</div>
+              <div class="tip-check">✅ Off-by-one check: is it `i &lt; n` or `i &lt;= n`?</div>
+              <div class="tip-check">✅ State complexity: "This is O(n) time, O(1) space"</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">06</span><span class="tip-card-title">Smart questions to ask the technical interviewer at the end</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">💬 "What does the tech stack look like on your team?"</div>
+              <div class="tip-check">💬 "How does code review work here?"</div>
+              <div class="tip-check">💬 "What's the biggest technical challenge the team is solving right now?"</div>
+              <div class="tip-check">💬 "What does a good first 90 days look like for this role?"</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HR -->
+      <div class="tips-section" id="ts-hr">
+        <div class="tips-sec-hd"><span>🤝</span><span>HR &amp; Behavioral Interview — 7 Key Tips</span></div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">01</span><span class="tip-card-title">"Tell me about yourself" — the perfect 90-second formula</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-formula-box">
+              <div class="tip-formula-row"><span class="tip-formula-label">Present</span><span>Your degree/role + 2–3 key skills</span></div>
+              <div class="tip-formula-row"><span class="tip-formula-label">Past</span><span>1–2 relevant experiences (internships, projects)</span></div>
+              <div class="tip-formula-row"><span class="tip-formula-label">Future</span><span>Why this role + what you bring</span></div>
+            </div>
+            <div class="tip-compare" style="margin-top:10px">
+              <div class="tip-good">✅ "I'm Arjun, final-year CS at BITS. I specialise in Python and React — built a real-time analytics dashboard at Razorpay that cut report time by 60%. I'm excited about [Company] because of your distributed systems work, which aligns with my thesis."</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">02</span><span class="tip-card-title">"Biggest weakness" — show self-awareness + growth mindset</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-compare">
+              <div class="tip-bad">❌ "I'm a perfectionist" / "I work too hard" / "I don't have weaknesses"</div>
+              <div class="tip-good">✅ Formula: Real weakness → Steps you're taking → Evidence of progress<br><br>"I used to struggle with public speaking. I joined the debate club and gave 6+ talks. Still improving but now much more confident."</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">03</span><span class="tip-card-title">10 must-prepare behavioral questions — use STAR for every one</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">💬 Tell me about a time you handled a conflict in a team</div>
+              <div class="tip-check">💬 Describe a challenging project and how you delivered it</div>
+              <div class="tip-check">💬 Tell me about a time you failed and what you learned</div>
+              <div class="tip-check">💬 How do you handle competing priorities or tight deadlines?</div>
+              <div class="tip-check">💬 Give an example of a time you showed leadership</div>
+              <div class="tip-check">💬 Tell me about a time you disagreed with a decision</div>
+              <div class="tip-check">💬 How do you handle feedback or criticism?</div>
+              <div class="tip-check">💬 Tell me about your biggest achievement</div>
+              <div class="tip-check">💬 Describe a time you had to learn something quickly</div>
+              <div class="tip-check">💬 Why do you want to leave / why this company?</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">04</span><span class="tip-card-title">Research the company — 5 things to know before walking in</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">✅ Products, business model, and recent news (last 6 months)</div>
+              <div class="tip-check">✅ Glassdoor reviews — culture, interview format, difficulty</div>
+              <div class="tip-check">✅ Competitors and how the company differentiates</div>
+              <div class="tip-check">✅ Their LinkedIn / blog for recent announcements</div>
+              <div class="tip-check">✅ Connect with current employees for insider tips</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">05</span><span class="tip-card-title">Body language and delivery — what interviewers notice</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">✅ Eye contact: look at the camera (not your face) on video calls</div>
+              <div class="tip-check">✅ Pace: slow down — nervous people speak fast</div>
+              <div class="tip-check">✅ Filler words: replace "umm", "like" with a deliberate pause</div>
+              <div class="tip-check">✅ Posture: sit up, lean slightly forward — signals engagement</div>
+              <div class="tip-check">✅ Smile: genuine warmth builds rapport even in technical rounds</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">06</span><span class="tip-card-title">Logistics — what to prepare the day before</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">👔 Business casual for tech companies — when in doubt dress slightly above work attire</div>
+              <div class="tip-check">📍 Arrive 10 min early (in-person) or log in 5 min early (video)</div>
+              <div class="tip-check">💻 Video: test audio, camera, internet, plain background</div>
+              <div class="tip-check">📁 Bring 3 printed resume copies for in-person</div>
+              <div class="tip-check">📓 Bring a notepad — taking notes shows seriousness</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">07</span><span class="tip-card-title">After the interview — follow up the right way</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">✉️ Thank-you email within 24 hours — personalise it with 1-2 things discussed</div>
+              <div class="tip-check">✅ If you answered poorly — clarify or add to it in the email</div>
+              <div class="tip-check">⏰ Follow up after 5–7 days if no response. One follow-up = professional. Two = pushy.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GD -->
+      <div class="tips-section" id="ts-gd">
+        <div class="tips-sec-hd"><span>🎤</span><span>Group Discussion — 5 Winning Strategies</span></div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">01</span><span class="tip-card-title">Opening the GD — scores 30% higher on leadership metrics</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-compare">
+              <div class="tip-good">✅ "I'd like to open the discussion. On [topic], we should examine three angles: economic impact, social implications, and long-term sustainability. Let me start with economics…"</div>
+            </div>
+            <p style="margin-top:8px;font-size:12px;color:var(--text-3)">If you can't open, jump in within the first 2 minutes — the window closes fast.</p>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">02</span><span class="tip-card-title">Phrases to enter the conversation without interrupting</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">💬 "Building on what [Name] said, I'd like to add…"</div>
+              <div class="tip-check">💬 "That's a valid point. From a different angle…"</div>
+              <div class="tip-check">💬 "The data actually supports this — [statistic or example]"</div>
+              <div class="tip-check">💬 "I'd like to respectfully counter that because…"</div>
+              <div class="tip-check">❌ Don't cut people mid-sentence — wait for a natural pause</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">03</span><span class="tip-card-title">What evaluators score you on — 5 dimensions</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">🗣 <strong>Communication (25%):</strong> Clarity, grammar, vocabulary, pace</div>
+              <div class="tip-check">🔍 <strong>Content (25%):</strong> Facts, examples, logic, original insights</div>
+              <div class="tip-check">👑 <strong>Leadership (20%):</strong> Opening, summarising, including quiet participants</div>
+              <div class="tip-check">🤝 <strong>Group Dynamics (15%):</strong> Listening, not dominating, acknowledging others</div>
+              <div class="tip-check">💪 <strong>Confidence (15%):</strong> Eye contact, posture, assertiveness without aggression</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">04</span><span class="tip-card-title">How to summarise and close the GD — show leadership</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-compare">
+              <div class="tip-good">✅ "We're near the end of time. To summarise — the group discussed [3 key points]. We broadly agreed that [consensus], while [Name] raised the important counter that [X]. Overall we lean toward [conclusion] while acknowledging [caveat]."</div>
+            </div>
+            <p style="margin-top:8px;font-size:12px;color:var(--text-3)">A great summary includes ALL major views, not just your own — shows maturity.</p>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">05</span><span class="tip-card-title">Top 8 GD topics for 2025 — prepare 3 for + 3 against each</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-patterns-grid">
+              <div class="tip-pattern-item">🤖 AI &amp; Job Displacement</div>
+              <div class="tip-pattern-item">🏡 WFH vs Return to Office</div>
+              <div class="tip-pattern-item">🌍 Climate Change Responsibility</div>
+              <div class="tip-pattern-item">📱 Social Media Regulation</div>
+              <div class="tip-pattern-item">🚀 India's Startup Ecosystem</div>
+              <div class="tip-pattern-item">🎓 Online vs Traditional Education</div>
+              <div class="tip-pattern-item">💰 Universal Basic Income</div>
+              <div class="tip-pattern-item">🔒 Data Privacy vs Convenience</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OFFER -->
+      <div class="tips-section" id="ts-offer">
+        <div class="tips-sec-hd"><span>💰</span><span>Offer &amp; Salary Negotiation — 4 Tips</span></div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">01</span><span class="tip-card-title">Research your market value first — know your number before the call</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">🔍 Glassdoor, AmbitionBox, LinkedIn Salary, Levels.fyi — role + city + company</div>
+              <div class="tip-check">💬 Ask seniors who placed at similar companies</div>
+              <div class="tip-check">📊 Know all components: base, bonus, equity/ESOP, joining bonus, benefits</div>
+              <div class="tip-check">📌 Have a specific number: "I was hoping for ₹X based on market research" beats "more money"</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">02</span><span class="tip-card-title">How to negotiate without losing the offer</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-compare">
+              <div class="tip-good">✅ "Thank you — I'm genuinely excited. Based on my research and skills, I was hoping we could get to ₹X. Is there flexibility on base salary or joining bonus?"</div>
+            </div>
+            <div class="tip-checks" style="margin-top:10px">
+              <div class="tip-check">✅ Ask for 48 hours to review before deciding</div>
+              <div class="tip-check">❌ Never give your current salary as anchor — give your target</div>
+              <div class="tip-check">❌ Don't accept verbally then negotiate — decide first</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">03</span><span class="tip-card-title">Using competing offers ethically to negotiate up</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-compare">
+              <div class="tip-good">✅ "I have another offer at ₹X — I'd prefer to join [Company] if we can match."</div>
+            </div>
+            <div class="tip-checks" style="margin-top:10px">
+              <div class="tip-check">✅ Be transparent but not aggressive</div>
+              <div class="tip-check">❌ Don't lie — HR often verifies with background checks</div>
+              <div class="tip-check">📌 Evaluate beyond salary: growth, tech stack, culture, WLB, mentorship</div>
+            </div>
+          </div>
+        </div>
+        <div class="tip-card" onclick="this.classList.toggle('open')">
+          <div class="tip-card-hd"><span class="tip-no">04</span><span class="tip-card-title">Evaluating an offer holistically — 5 things that matter more than CTC</span><span class="tip-chevron">▼</span></div>
+          <div class="tip-card-body">
+            <div class="tip-checks">
+              <div class="tip-check">💰 Take-home salary (post-tax) vs just CTC — variable % matters a lot</div>
+              <div class="tip-check">📈 Promotion timelines, appraisal cycle, learning budget</div>
+              <div class="tip-check">🛠 Tech stack: modern greenfield vs legacy maintenance?</div>
+              <div class="tip-check">🧑‍💼 Manager quality: ask to meet them — manager &gt; company</div>
+              <div class="tip-check">⚖️ Work-life balance: avg working hours, on-call, WFH policy</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         RESUME TEMPLATES PAGE
+    ═══════════════════════════════════════════════ -->
+    <div class="page" id="page-templates">
+      <div class="page-head">
+        <div class="eyebrow badge-indigo">📝 Resources</div>
+        <h1 class="page-title">Resume <span class="text-indigo">Templates</span></h1>
+        <p class="page-sub">Pick a template, fill in your details, and export a professional PDF. All templates are ATS-friendly and fully editable.</p>
+      </div>
+
+      <!-- Template Cards -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px">
+        <div class="tmpl-pick" id="tp-modern" onclick="pickTemplate('modern',this)">
+          <div class="tmpl-pick-active-badge">✓</div>
+          <div class="tmpl-thumb-box" style="background:#fff">
+            <div style="background:var(--indigo);color:#fff;padding:6px 8px;margin:-8px -8px 6px;font-size:8px;font-weight:900;border-radius:4px 4px 0 0">ARJUN SHARMA — Software Engineer</div>
+            <div style="height:3px;background:var(--border);border-radius:1px;margin-bottom:3px;width:90%"></div>
+            <div style="height:3px;background:var(--border);border-radius:1px;margin-bottom:6px;width:70%"></div>
+            <div style="font-size:6px;font-weight:800;color:var(--indigo);border-bottom:1px solid var(--indigo);margin-bottom:3px">EXPERIENCE</div>
+            <div style="height:3px;background:var(--border);border-radius:1px;margin-bottom:2px;width:95%"></div>
+            <div style="height:3px;background:var(--border);border-radius:1px;width:75%"></div>
+          </div>
+          <div class="tmpl-pick-name">Modern Blue</div>
+          <div class="tmpl-pick-desc">Indigo header · Best for SWE</div>
+        </div>
+        <div class="tmpl-pick" id="tp-minimal" onclick="pickTemplate('minimal',this)">
+          <div class="tmpl-pick-active-badge">✓</div>
+          <div class="tmpl-thumb-box" style="background:#fff">
+            <div style="border-left:3px solid #0d1b2a;padding-left:6px;margin-bottom:5px"><div style="font-size:9px;font-weight:900;color:#0d1b2a">ARJUN SHARMA</div><div style="font-size:6px;color:#555">Software Engineer</div></div>
+            <div style="height:1px;background:#0d1b2a;margin-bottom:5px"></div>
+            <div style="font-size:6px;font-weight:800;color:#0d1b2a;margin-bottom:3px;text-transform:uppercase">Experience</div>
+            <div style="height:3px;background:var(--border);border-radius:1px;margin-bottom:2px;width:90%"></div>
+            <div style="height:3px;background:var(--border);border-radius:1px;width:65%"></div>
+          </div>
+          <div class="tmpl-pick-name">Minimal Mono</div>
+          <div class="tmpl-pick-desc">Pure B&W · ATS top performer</div>
+        </div>
+        <div class="tmpl-pick" id="tp-dark" onclick="pickTemplate('dark',this)">
+          <div class="tmpl-pick-active-badge">✓</div>
+          <div class="tmpl-thumb-box" style="background:#0d1b2a">
+            <div style="color:#e6edf3;font-size:9px;font-weight:900;margin-bottom:2px;font-family:'Courier New',monospace">ARJUN SHARMA</div>
+            <div style="color:#58a6ff;font-size:6px;margin-bottom:5px">Software Engineer</div>
+            <div style="font-size:6px;font-weight:800;color:#58a6ff;border-bottom:1px solid #30363d;margin-bottom:3px;text-transform:uppercase">Experience</div>
+            <div style="height:3px;background:#30363d;border-radius:1px;margin-bottom:2px;width:90%"></div>
+            <div style="height:3px;background:#30363d;border-radius:1px;width:70%"></div>
+          </div>
+          <div class="tmpl-pick-name">Dark Terminal</div>
+          <div class="tmpl-pick-desc">Bold dark · Stands out for tech</div>
+        </div>
+        <div class="tmpl-pick" id="tp-creative" onclick="pickTemplate('creative',this)">
+          <div class="tmpl-pick-active-badge">✓</div>
+          <div class="tmpl-thumb-box" style="background:#faf5ff">
+            <div style="background:linear-gradient(135deg,var(--violet),var(--indigo));color:#fff;padding:6px 8px;margin:-8px -8px 6px;font-size:8px;font-weight:900;border-radius:4px 4px 0 0">ARJUN SHARMA — Software Engineer</div>
+            <div style="height:3px;background:#e9d5ff;border-radius:1px;margin-bottom:2px;width:90%"></div>
+            <div style="height:3px;background:#e9d5ff;border-radius:1px;margin-bottom:5px;width:70%"></div>
+            <div style="font-size:6px;font-weight:800;color:var(--violet);border-bottom:1px solid var(--violet);margin-bottom:3px">EXPERIENCE</div>
+            <div style="height:3px;background:#e9d5ff;border-radius:1px;margin-bottom:2px;width:95%"></div>
+            <div style="height:3px;background:#e9d5ff;border-radius:1px;width:75%"></div>
+          </div>
+          <div class="tmpl-pick-name">Creative Violet</div>
+          <div class="tmpl-pick-desc">Gradient header · Great for PM/design</div>
+        </div>
+      </div>
+
+      <!-- Editor + Preview -->
+      <div style="display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start">
+        <!-- Form Panel -->
+        <div class="rb-form-panel">
+          <div class="rb-form-hd">
+            <span>✏️ Edit Your Resume</span>
+            <button class="btn btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border:none;font-size:11px;padding:5px 12px;border-radius:6px;cursor:pointer" onclick="loadSampleResume()">📋 Sample</button>
+          </div>
+          <!-- Tabs -->
+          <div class="rb-tabs">
+            <button class="rb-tab-btn active" onclick="showRBTab('personal',this)">👤</button>
+            <button class="rb-tab-btn" onclick="showRBTab('experience',this)">💼</button>
+            <button class="rb-tab-btn" onclick="showRBTab('education',this)">🎓</button>
+            <button class="rb-tab-btn" onclick="showRBTab('skills',this)">🛠</button>
+            <button class="rb-tab-btn" onclick="showRBTab('projects',this)">🚀</button>
+          </div>
+          <!-- Personal -->
+          <div class="rb-tab-panel active" id="rbp-personal">
+            <div class="rb-input-group"><label>Full Name *</label><input id="ri-name" type="text" placeholder="Arjun Sharma" oninput="livePreview()"></div>
+            <div class="rb-input-group"><label>Professional Title</label><input id="ri-title" type="text" placeholder="Software Engineer" oninput="livePreview()"></div>
+            <div class="rb-input-group"><label>Email *</label><input id="ri-email" type="email" placeholder="arjun@email.com" oninput="livePreview()"></div>
+            <div class="rb-input-group"><label>Phone</label><input id="ri-phone" type="text" placeholder="+91 98765 43210" oninput="livePreview()"></div>
+            <div class="rb-input-group"><label>Location</label><input id="ri-location" type="text" placeholder="Bengaluru, India" oninput="livePreview()"></div>
+            <div class="rb-input-group"><label>LinkedIn</label><input id="ri-linkedin" type="text" placeholder="linkedin.com/in/yourname" oninput="livePreview()"></div>
+            <div class="rb-input-group"><label>GitHub</label><input id="ri-github" type="text" placeholder="github.com/yourname" oninput="livePreview()"></div>
+            <div class="rb-input-group"><label>Professional Summary</label><textarea id="ri-summary" rows="4" placeholder="CS graduate with Python + React expertise, 2 internships, 3 deployed projects…" oninput="livePreview()"></textarea></div>
+          </div>
+          <!-- Experience -->
+          <div class="rb-tab-panel" id="rbp-experience">
+            <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:12px;font-weight:700;color:var(--text-2)">Work Experience</span>
+              <button class="btn btn-primary btn-sm" onclick="addRBExp()">+ Add</button>
+            </div>
+            <div id="rb-exp-list" style="padding:12px;display:flex;flex-direction:column;gap:12px"></div>
+          </div>
+          <!-- Education -->
+          <div class="rb-tab-panel" id="rbp-education">
+            <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:12px;font-weight:700;color:var(--text-2)">Education</span>
+              <button class="btn btn-primary btn-sm" onclick="addRBEdu()">+ Add</button>
+            </div>
+            <div id="rb-edu-list" style="padding:12px;display:flex;flex-direction:column;gap:12px"></div>
+          </div>
+          <!-- Skills -->
+          <div class="rb-tab-panel" id="rbp-skills">
+            <div class="rb-input-group"><label>Languages</label><input id="ri-lang" type="text" placeholder="Python, JavaScript, Java" oninput="livePreview()"></div>
+            <div class="rb-input-group"><label>Frameworks</label><input id="ri-fw" type="text" placeholder="React, Node.js, Django" oninput="livePreview()"></div>
+            <div class="rb-input-group"><label>Databases</label><input id="ri-db" type="text" placeholder="MySQL, MongoDB, Redis" oninput="livePreview()"></div>
+            <div class="rb-input-group"><label>Cloud / DevOps</label><input id="ri-cloud" type="text" placeholder="AWS, Docker, Kubernetes" oninput="livePreview()"></div>
+            <div class="rb-input-group"><label>Tools</label><input id="ri-tools" type="text" placeholder="Git, Jira, Linux, REST APIs" oninput="livePreview()"></div>
+            <div class="rb-input-group"><label>Certifications</label><input id="ri-certs" type="text" placeholder="AWS Cloud Practitioner, GCP Associate" oninput="livePreview()"></div>
+            <div class="rb-input-group"><label>Achievements</label><textarea id="ri-ach" rows="3" placeholder="Smart India Hackathon 2024 finalist&#10;LeetCode 500+ problems solved" oninput="livePreview()"></textarea></div>
+          </div>
+          <!-- Projects -->
+          <div class="rb-tab-panel" id="rbp-projects">
+            <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:12px;font-weight:700;color:var(--text-2)">Projects</span>
+              <button class="btn btn-primary btn-sm" onclick="addRBProj()">+ Add</button>
+            </div>
+            <div id="rb-proj-list" style="padding:12px;display:flex;flex-direction:column;gap:12px"></div>
+          </div>
+          <!-- Actions -->
+          <div style="padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px;background:var(--surface2)">
+            <button class="btn btn-primary" style="flex:1" id="btnExportPDF" onclick="handleExportClick()">⬇ Export PDF</button>
+            <button class="btn btn-ghost btn-sm" title="Clear form" onclick="clearResumeForm()">🗑</button>
+          </div>
+        </div>
+        <!-- Live Preview -->
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px 14px;background:#fff;border:1px solid var(--border);border-radius:var(--r)">
+            <span style="font-size:13px;font-weight:800;color:var(--text)">🔍 Live Preview</span>
+            <div style="display:flex;align-items:center;gap:6px"><div style="width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite"></div><span style="font-size:11px;color:var(--text-3);font-weight:600">Auto-updating</span></div>
+          </div>
+          <div id="rv-preview" style="background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow);overflow:hidden;min-height:500px"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+
+
+<!-- ══════════════════════════════════════════════════════════
+     SCRIPTS — Load order matters:
+     1. app.js  (defines state, UI functions)
+     2. db.js   (Firebase auth + Firestore, references app.js globals)
+═══════════════════════════════════════════════════════════ -->
+<script src="app.js"></script>
+<script src="db.js"></script>
+
+</body>
+</html>
